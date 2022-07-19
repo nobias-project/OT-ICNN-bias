@@ -4,7 +4,7 @@ import torch.nn as nn
 import math
 from torch.autograd import Variable
 from torch.autograd import Function
-import torch.nn._functions as tnnf
+#import torch.nn._functions as tnnf
 import numpy as np
 
 

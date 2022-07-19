@@ -35,7 +35,7 @@ parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--DATASET_X', type=str, default='mixtureGaussian', help='which dataset to use for X')
 parser.add_argument('--DATASET_Y', type=str, default='StandardGaussian', help='which dataset to use for Y')
 
-parser.add_argument('--INPUT_DIM', type=int, default=784, help='dimensionality of the input x')
+parser.add_argument('--INPUT_DIM', type=int, default=2, help='dimensionality of the input x')
 
 parser.add_argument('--BATCH_SIZE', type=int, default=60, help='size of the batches')
 
@@ -44,7 +44,7 @@ parser.add_argument('--epochs', type=int, default=40, metavar='S',
 
 parser.add_argument('--N_GENERATOR_ITERS', type=int, default=16, help='number of training steps for discriminator per iter')
 
-parser.add_argument('--NUM_NEURON', type=int, default=1024, help='number of neurons per layer')
+parser.add_argument('--NUM_NEURON', type=int, default=512, help='number of neurons per layer')
 
 parser.add_argument('--NUM_LAYERS', type=int, default=3, help='number of hidden layers before output')
 
@@ -142,9 +142,10 @@ kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
 # Data stuff
 
 mu = args.SCALE * torch.ones(1, args.INPUT_DIM)
-
-X_data = mu + torch.randn(60000, args.INPUT_DIM)
-
+m = torch.distributions.multivariate_normal.MultivariateNormal(mu,
+                                                               torch.eye(args.INPUT_DIM))
+#X_data = mu + torch.randn(60000, args.INPUT_DIM)
+X_data = m.sample((60000,2))
 train_loader = torch.utils.data.DataLoader(X_data, batch_size=args.BATCH_SIZE, shuffle=True, **kwargs)
 
 
@@ -337,8 +338,10 @@ def train(epoch):
             real_data = real_data.cuda()
 
         real_data = Variable(real_data)
-
-        y = Variable(torch.randn(args.BATCH_SIZE, args.INPUT_DIM), requires_grad= True)
+        
+        m = torch.distributions.multivariate_normal.MultivariateNormal(torch.zeros(args.INPUT_DIM),
+                                                                       torch.eye(args.INPUT_DIM))
+        y = Variable(m.sample((args.BATCH_SIZE,2)), requires_grad= True)
 
         if args.cuda:
             y = y.cuda()
@@ -556,71 +559,73 @@ plt.show()
 logging.info("Training is finished and the models and plots are saved. Good job :)")
 
 
-
-# ## Useful for loading and checkign the distributions once the training is done
-
-# convex_f.load_state_dict(torch.load(model_save_path+'/convex_f.pt'))
-# convex_g.load_state_dict(torch.load(model_save_path+'/convex_g.pt'))
-
+# =============================================================================
+# 
+# # ## Useful for loading and checkign the distributions once the training is done
+# 
+# convex_f.load_state_dict(torch.load(model_save_path+'/convex_f_epoch_9.pt'))
+# convex_g.load_state_dict(torch.load(model_save_path+'/convex_g_epoch_9.pt'))
+# 
 # y = torch.randn(args.BATCH_SIZE, args.INPUT_DIM, requires_grad=True)
-
+# 
 # x = mu + torch.randn(args.BATCH_SIZE, args.INPUT_DIM)
-
+# 
 # if args.cuda:
-
+# 
 #     x, y = x.cuda(), y.cuda()
-
+# 
 # g_of_y = convex_g(y).sum()
-
+# 
 # transport_y = torch.autograd.grad(g_of_y, y, create_graph=True)[0]
-
+# 
 # mean_transport_y = transport_y.mean(0)
 # mean_x = x.mean(0)
-
+# 
 # mean_loss = (mean_transport_y - mean_x).pow(2).sum().item()
-
+# 
 # print("Mean loss is:", mean_loss)
-
-
-#########
-### Checking stuff
-
-
+# 
+# 
+# #########
+# ### Checking stuff
+# 
+# 
 # if args.cuda:
-#     real_data = first_batch_data.cuda()
-#
+#     real_data = X_data[:60].cuda()
 # real_data = Variable(real_data)
-#
+# 
 # y = Variable(torch.randn(args.BATCH_SIZE, args.INPUT_DIM), requires_grad=True)
 # if args.cuda:
 #     y = y.cuda()
-#
+# 
 # g_of_y = convex_g(y).sum()
-#
+# 
 # grad_g_of_y = torch.autograd.grad(g_of_y, y, create_graph=True)[0]
-#
+# 
 # f_grad_g_y = convex_f(grad_g_of_y).mean()
-#
+# 
 # loss_g = f_grad_g_y - torch.dot(grad_g_of_y.reshape(-1), y.reshape(-1)) / y.size(0)
 # loss_g.backward()
-#
+# 
 # g_positive_constraint_loss = compute_constraint_loss(g_positive_params)
 # g_positive_constraint_loss.backward()
-#
+# 
 # optimizer_g.step()
-#
+# 
 # for p in list(convex_f.parameters()):
-#     p.grad.copy_(-p.grad)
-#
+#      p.grad.copy_(-p.grad)
+# 
 # remaining_f_loss = convex_f(real_data).mean()
 # remaining_f_loss.backward()
-#
+# 
 # optimizer_f.step()
-#
+# 
 # w_2_loss_value = loss_g.item() - remaining_f_loss.item() + 0.5 * real_data.pow(2).sum(
 #     dim=1).mean().item() + 0.5 * y.pow(2).sum(dim=1).mean().item()
-#
+# 
 # for p in f_positive_params:
 #     p.data.copy_(torch.relu(p.data))
-#
+# 
 # print(w_2_loss_value)
+# 
+# =============================================================================
