@@ -41,21 +41,21 @@ from scipy.stats import truncnorm
 # Training settings. Important ones first
 parser = argparse.ArgumentParser(description='PyTorch Experiment')
 
-parser.add_argument('--DATASET_X', type=str, default='mixtureGaussian', help='which dataset to use for X')
-parser.add_argument('--DATASET_Y', type=str, default='StandardGaussian', help='which dataset to use for Y')
+parser.add_argument('--DATASET_X', type=str, default='standardGaussian', help='which dataset to use for X')
+parser.add_argument('--DATASET_Y', type=str, default='standardGaussian', help='which dataset to use for Y')
 
 
-parser.add_argument('--INPUT_DIM', type=int, default=256*3, help='dimensionality of the input x')
+parser.add_argument('--INPUT_DIM', type=int, default=2, help='dimensionality of the input x')
 
-parser.add_argument('--BATCH_SIZE', type=int, default=256
+parser.add_argument('--BATCH_SIZE', type=int, default=60
                     , help='size of the batches')
 
-parser.add_argument('--epochs', type=int, default=80, metavar='S',
+parser.add_argument('--epochs', type=int, default=40, metavar='S',
                     help='number_of_epochs')
 
 parser.add_argument('--N_GENERATOR_ITERS', type=int, default=16, help='number of training steps for discriminator per iter')
 
-parser.add_argument('--NUM_NEURON', type=int, default=1024, help='number of neurons per layer')
+parser.add_argument('--NUM_NEURON', type=int, default=512, help='number of neurons per layer')
 
 parser.add_argument('--NUM_LAYERS', type=int, default=3, help='number of hidden layers before output')
 
@@ -69,7 +69,7 @@ parser.add_argument('--TRIAL', type=int, default=1, help='the trail no.')
 
 parser.add_argument('--optimizer', type=str, default='Adam', help='which optimizer to use')
 
-parser.add_argument('--LR', type=float, default=1e-3, help='learning rate')
+parser.add_argument('--LR', type=float, default=1e-4, help='learning rate')
 
 parser.add_argument('--momentum', type=float, default=0.0, metavar='M',
                     help='SGD momentum (default: 0.5)')
@@ -94,8 +94,8 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
 
 parser.add_argument('--N_PLOT', type=int, default=16, help='number of samples for plotting')
 
-# parser.add_argument('--SCALE', type=float, default=10.0, help='scale for the gaussian_mixtures')
-# parser.add_argument('--VARIANCE', type=float, default=0.5, help='variance for each mixture')
+parser.add_argument('--SCALE', type=float, default=10.0, help='scale for the gaussian_mixtures')
+parser.add_argument('--VARIANCE', type=float, default=0.5, help='variance for each mixture')
 
 # parser.add_argument('--N_TEST', type=int, default=2048, help='number of test samples')
 
@@ -150,22 +150,42 @@ kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
 # Data stuff
 
 if args.DATASET_X == "mixtureGaussian":
-    pass
+    
+    mu = torch.concat([torch.ones(1, args.INPUT_DIM), args.SCALE * torch.ones(1, args.INPUT_DIM)])
+    
+    mix = torch.distributions.categorical.Categorical(torch.Tensor([.75, .25]))
+    comp = torch.distributions.multivariate_normal.MultivariateNormal(mu, args.VARIANCE * torch.eye(args.INPUT_DIM) )
+    
+   
+    m_X = torch.distributions.mixture_same_family.MixtureSameFamily(mix, comp)
+    X_data = m_X.sample((60000,args.INPUT_DIM))
+    
 if args.DATASET_X == "standardGaussian":
-    pass
+    mu = args.SCALE * torch.ones(1, args.INPUT_DIM)
+    m_X = torch.distributions.multivariate_normal.MultivariateNormal(mu, torch.eye(args.INPUT_DIM))
+    X_data = m_X.sample((60000,args.INPUT_DIM))
+    
 if args.DATASET_X == "celebA":
-    pass
-X_data = torch.load("../data/celeba/celebA__hist_sample2.pt").reshape((-1, args.INPUT_DIM))
+    X_data = torch.load("../data/celeba/celebA__hist_sample2.pt").reshape((-1, args.INPUT_DIM))
+    
 train_loader = torch.utils.data.DataLoader(X_data, batch_size=args.BATCH_SIZE, shuffle=True, **kwargs)
 logging.info("Created the data loader for X\n")
 
 if args.DATASET_Y == "mixtureGaussian":
-    pass
+    
+    mu = torch.concat([torch.ones(1, args.INPUT_DIM), args.SCALE * torch.ones(1, args.INPUT_DIM)])
+    
+    mix = torch.distributions.categorical.Categorical(torch.Tensor([.75, .25]))
+    comp = torch.distributions.multivariate_normal.MultivariateNormal(mu, args.VARIANCE * torch.eye(args.INPUT_DIM) )
+    
+   
+    m_Y = torch.distributions.mixture_same_family.MixtureSameFamily(mix, comp)
+    
 if args.DATASET_Y == "standardGaussian":
-    pass
+    mu = torch.zeros(1, args.INPUT_DIM)
+    m_Y = torch.distributions.multivariate_normal.MultivariateNormal(mu, torch.eye(args.INPUT_DIM))
 if args.DATASET_Y == "celebA":
-    pass
-Y_data = torch.load("../data/celeba/celebA__hist_sample1.pt").reshape((-1, args.INPUT_DIM))
+    Y_data = torch.load("../data/celeba/celebA__hist_sample1.pt").reshape((-1, args.INPUT_DIM))
 
 # Plotting stuff
 
@@ -357,9 +377,12 @@ def train(epoch):
             real_data = real_data.cuda()
 
         real_data = Variable(real_data)
-        
-        indices = random.sample(range(Y_data.size(0)), args.BATCH_SIZE)
-        y = Variable(Y_data[indices], requires_grad= True)
+        if args.DATASET_Y == "mixtureGaussian" or args.DATASET_Y == "standardGaussian":
+            y = Variable(m_Y.sample((args.BATCH_SIZE, args.INPUT_DIM)) , requires_grad= True)
+
+        if args.DATASET_Y == "celebA":
+            indices = random.sample(range(Y_data.size(0)), args.BATCH_SIZE)
+            y = Variable(Y_data[indices], requires_grad= True)
 
         if args.cuda:
             y = y.cuda()
