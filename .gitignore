@@ -4,5 +4,6 @@ data
 **/.ipynb_checkpoints/
 .spyproject
 *.drawio
+results/Results*
 
 # Temporary

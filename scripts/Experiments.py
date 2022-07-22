@@ -10,6 +10,7 @@ Created on Mon Jul 11 09:28:21 2022
 from __future__ import print_function
 import argparse
 import torch
+import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -19,11 +20,13 @@ import src.optimal_transport_modules
 from src.optimal_transport_modules.icnn_modules import *
 import time
 import random
+import facenet_pytorch as facenet
 import numpy as np
 import pandas as pd
 import os
 import logging
 import torch.utils.data
+import src.datasets
 from src.utils import *
 from datetime import datetime
 from ast import literal_eval
@@ -41,11 +44,11 @@ from scipy.stats import truncnorm
 # Training settings. Important ones first
 parser = argparse.ArgumentParser(description='PyTorch Experiment')
 
-parser.add_argument('--DATASET_X', type=str, default='standardGaussian', help='which dataset to use for X')
-parser.add_argument('--DATASET_Y', type=str, default='standardGaussian', help='which dataset to use for Y')
+parser.add_argument('--DATASET_X', type=str, default='celebA', help='which dataset to use for X')
+parser.add_argument('--DATASET_Y', type=str, default='celebA', help='which dataset to use for Y')
 
 
-parser.add_argument('--INPUT_DIM', type=int, default=2, help='dimensionality of the input x')
+parser.add_argument('--INPUT_DIM', type=int, default=512, help='dimensionality of the input x')
 
 parser.add_argument('--BATCH_SIZE', type=int, default=60
                     , help='size of the batches')
@@ -55,7 +58,7 @@ parser.add_argument('--epochs', type=int, default=40, metavar='S',
 
 parser.add_argument('--N_GENERATOR_ITERS', type=int, default=16, help='number of training steps for discriminator per iter')
 
-parser.add_argument('--NUM_NEURON', type=int, default=512, help='number of neurons per layer')
+parser.add_argument('--NUM_NEURON', type=int, default=1024, help='number of neurons per layer')
 
 parser.add_argument('--NUM_LAYERS', type=int, default=3, help='number of hidden layers before output')
 
@@ -69,7 +72,7 @@ parser.add_argument('--TRIAL', type=int, default=1, help='the trail no.')
 
 parser.add_argument('--optimizer', type=str, default='Adam', help='which optimizer to use')
 
-parser.add_argument('--LR', type=float, default=1e-4, help='learning rate')
+parser.add_argument('--LR', type=float, default=1e-3, help='learning rate')
 
 parser.add_argument('--momentum', type=float, default=0.0, metavar='M',
                     help='SGD momentum (default: 0.5)')
@@ -166,7 +169,13 @@ if args.DATASET_X == "standardGaussian":
     X_data = m_X.sample((60000,args.INPUT_DIM))
     
 if args.DATASET_X == "celebA":
-    X_data = torch.load("../data/celeba/celebA__hist_sample2.pt").reshape((-1, args.INPUT_DIM))
+    transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
+                                               torchvision.transforms.Resize(160)])
+    X_data = src.datasets.CelebA("../data/celeba/celebA_sample_male.csv",
+                                 "../data/celeba/Img_folder/Img",
+                                 transform=transform)
+
+    Features_X = facenet.InceptionResnetV1(pretrained='vggface2').eval()
     
 train_loader = torch.utils.data.DataLoader(X_data, batch_size=args.BATCH_SIZE, shuffle=True, **kwargs)
 logging.info("Created the data loader for X\n")
@@ -185,21 +194,29 @@ if args.DATASET_Y == "standardGaussian":
     mu = torch.zeros(1, args.INPUT_DIM)
     m_Y = torch.distributions.multivariate_normal.MultivariateNormal(mu, torch.eye(args.INPUT_DIM))
 if args.DATASET_Y == "celebA":
-    Y_data = torch.load("../data/celeba/celebA__hist_sample1.pt").reshape((-1, args.INPUT_DIM))
+    transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
+                                               torchvision.transforms.Resize(160)])
+    Y_data = src.datasets.CelebA("../data/celeba/celebA_sample_female.csv",
+                                 "../data/celeba/Img_folder/Img",
+                                 transform=transform)
+
+    Features_Y = facenet.InceptionResnetV1(pretrained='vggface2').eval()
 
 # Plotting stuff
 
-y_plot = Variable(torch.randn(args.N_PLOT, args.INPUT_DIM), requires_grad=True)
-
-initial_y = y_plot.data.cpu().numpy()
-
-
-x_plot = X_data[:args.N_PLOT, :]
-
-initial_x = x_plot.data.cpu().numpy()
-
-if args.cuda:
-    y_plot = y_plot.cuda()
+# =============================================================================
+# y_plot = Variable(torch.randn(args.N_PLOT, args.INPUT_DIM), requires_grad=True)
+# 
+# initial_y = y_plot.data.cpu().numpy()
+# 
+# 
+# x_plot = X_data[:args.N_PLOT, :]
+# 
+# initial_x = x_plot.data.cpu().numpy()
+# 
+# if args.cuda:
+#     y_plot = y_plot.cuda()
+# =============================================================================
 
 ############################################################
 ## Model stuff
@@ -371,18 +388,24 @@ def train(epoch):
     for batch_idx, real_data in enumerate(train_loader):
 
         # count += 1
+        if args.DATASET_X == "celebA":
+            real_data = Features_X(real_data)
 
         if args.cuda:
-
             real_data = real_data.cuda()
 
         real_data = Variable(real_data)
+        
         if args.DATASET_Y == "mixtureGaussian" or args.DATASET_Y == "standardGaussian":
             y = Variable(m_Y.sample((args.BATCH_SIZE, args.INPUT_DIM)) , requires_grad= True)
 
         if args.DATASET_Y == "celebA":
-            indices = random.sample(range(Y_data.size(0)), args.BATCH_SIZE)
-            y = Variable(Y_data[indices], requires_grad= True)
+            indices = random.sample(range(len(Y_data)), len(real_data))
+            Y_subset = torch.utils.data.Subset(Y_data, indices)
+            Y_loader = torch.utils.data.DataLoader(Y_subset, batch_size=len(real_data), shuffle=True, **kwargs)
+            y = next(iter(Y_loader)).float()
+            y = Features_Y(y)
+            y = Variable(y, requires_grad= True)
 
         if args.cuda:
             y = y.cuda()
