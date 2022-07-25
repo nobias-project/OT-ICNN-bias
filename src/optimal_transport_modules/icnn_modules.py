@@ -35,7 +35,7 @@ class ConvexLinear(nn.Linear):
 
         super(ConvexLinear, self).__init__(*kargs, **kwargs)
 
-       #self.weight.data.copy_(torch.abs(self.weight.data))
+        # self.weight.data.copy_(torch.abs(self.weight.data))
 
         if not hasattr(self.weight, 'be_positive'):
             self.weight.be_positive = 1.0
@@ -67,7 +67,8 @@ class Simple_Feedforward_2Layer_ICNN_LastInp_Quadratic(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, activation):
 
-        super(Simple_Feedforward_2Layer_ICNN_LastInp_Quadratic, self).__init__()
+        super(Simple_Feedforward_2Layer_ICNN_LastInp_Quadratic,
+              self).__init__()
 
         # For now I am hardcoding it as three hiden layers
         # x, h_1, h_2, h_3, f(x)
@@ -76,19 +77,20 @@ class Simple_Feedforward_2Layer_ICNN_LastInp_Quadratic(nn.Module):
         self.hidden_dim = hidden_dim
         self.activation = activation
 
-        # x -> h_1        
+        # x -> h_1
         self.fc1_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
         self.activ_1 = get_activation(self.activation)
 
         self.fc2_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc2_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc2_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_2 = get_activation(self.activation)
 
         self.last_convex = ConvexLinear(self.hidden_dim, 1, bias=False)
         self.last_linear = nn.Linear(self.input_dim, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
-        #self.activ_4 = nn.LeakyReLU(0.2)
-
+        # self.activ_4 = nn.LeakyReLU(0.2)
 
     # Input is of size
     def forward(self, input):
@@ -110,7 +112,8 @@ class Simple_Feedforward_2Layer_ICNN_LastFull_Quadratic(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, activation):
 
-        super(Simple_Feedforward_2Layer_ICNN_LastFull_Quadratic, self).__init__()
+        super(Simple_Feedforward_2Layer_ICNN_LastFull_Quadratic,
+              self).__init__()
 
         # For now I am hardcoding it as three hiden layers
         # x, h_1, h_2, h_3, f(x)
@@ -119,19 +122,20 @@ class Simple_Feedforward_2Layer_ICNN_LastFull_Quadratic(nn.Module):
         self.hidden_dim = hidden_dim
         self.activation = activation
 
-        # x -> h_1        
+        # x -> h_1
         self.fc1_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
         self.activ_1 = get_activation(self.activation)
 
         self.fc2_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc2_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc2_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_2 = get_activation(self.activation)
 
         self.last_convex = ConvexLinear(self.hidden_dim, 1, bias=False)
         self.last_linear = nn.Linear(self.input_dim, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
-        #self.activ_4 = nn.LeakyReLU(0.2)
-
+        # self.activ_4 = nn.LeakyReLU(0.2)
 
     # Input is of size
     def forward(self, input):
@@ -153,7 +157,8 @@ class Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, activation):
 
-        super(Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic, self).__init__()
+        super(Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic,
+              self).__init__()
 
         # For now I am hardcoding it as three hiden layers
         # x, h_1, h_2, h_3, f(x)
@@ -162,17 +167,21 @@ class Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic(nn.Module):
         self.hidden_dim = hidden_dim
         self.activation = activation
 
-        # x -> h_1        
+        # x -> h_1
         self.fc1_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        #self.dense1_bn = nn.BatchNorm1d(self.hidden_dim)
+        # self.dense1_bn = nn.BatchNorm1d(self.hidden_dim)
         self.activ_1 = get_activation(self.activation)
 
         self.fc2_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc2_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc2_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_2 = get_activation(self.activation)
 
         self.fc3_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc3_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc3_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_3 = get_activation(self.activation)
 
         self.last_convex = ConvexLinear(self.hidden_dim, 1, bias=False)
@@ -180,10 +189,8 @@ class Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic(nn.Module):
 
         # self.dense2_bn = nn.BatchNorm1d(self.hidden_dim)
         # self.dense3_bn = nn.BatchNorm1d(self.hidden_dim)
-        
-        # We might also not want to include an activation in the last  layer.
-        
 
+        # We might also not want to include an activation in the last  layer.
 
     # Input is of size
     def forward(self, input):
@@ -192,7 +199,7 @@ class Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic(nn.Module):
 
         # input_image = input.view(-1, 1, 28, 28)
 
-        #x = self.activ_1(self.dense1_bn(self.fc1_normal(input))).pow(2)
+        # x = self.activ_1(self.dense1_bn(self.fc1_normal(input))).pow(2)
         x = self.activ_1(self.fc1_normal(input)).pow(2)
 
         x = self.activ_2(self.fc2_convex(x).add(self.fc2_normal(input)))
@@ -203,11 +210,14 @@ class Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic(nn.Module):
 
         return x
 
-class Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic_LastLayerCeLU(nn.Module):
+
+class Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic_LastLayerCeLU(
+        nn.Module):
 
     def __init__(self, input_dim, hidden_dim, activation):
 
-        super(Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic_LastLayerCeLU, self).__init__()
+        super(Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic_LastLayerCeLU,
+              self).__init__()
 
         # For now I am hardcoding it as three hiden layers
         # x, h_1, h_2, h_3, f(x)
@@ -216,23 +226,26 @@ class Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic_LastLayerCeLU(nn.Module):
         self.hidden_dim = hidden_dim
         self.activation = activation
 
-        # x -> h_1        
+        # x -> h_1
         self.fc1_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
         self.activ_1 = get_activation(self.activation)
 
         self.fc2_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc2_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc2_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_2 = get_activation(self.activation)
 
         self.fc3_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc3_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc3_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_3 = get_activation(self.activation)
 
         self.last_convex = ConvexLinear(self.hidden_dim, 1, bias=False)
         self.last_linear = nn.Linear(self.input_dim, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
         self.activ_4 = get_activation(self.activation)
-
 
     # Input is of size
     def forward(self, input):
@@ -247,9 +260,12 @@ class Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic_LastLayerCeLU(nn.Module):
 
         x = self.activ_3(self.fc3_convex(x).add(self.fc3_normal(input)))
 
-        x = self.activ_4(self.last_convex(x).add(self.last_linear(input).pow(2)))
+        x = self.activ_4(
+            self.last_convex(x).add(self.last_linear(input).pow(2))
+            )
 
         return x
+
 
 class Simple_Feedforward_3Layer_ICNN_LastLayerCeLU(nn.Module):
 
@@ -264,23 +280,28 @@ class Simple_Feedforward_3Layer_ICNN_LastLayerCeLU(nn.Module):
         self.hidden_dim = hidden_dim
         self.activation = activation
 
-        # x -> h_1        
-        self.fc1_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
+        # x -> h_1
+        self.fc1_normal = nn.Linear(self.input_dim,
+                                    self.hidden_dim,
+                                    bias=True)
         self.activ_1 = get_activation(self.activation)
 
         self.fc2_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc2_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc2_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_2 = get_activation(self.activation)
 
         self.fc3_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc3_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc3_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_3 = get_activation(self.activation)
 
         self.last_convex = ConvexLinear(self.hidden_dim, 1, bias=False)
         self.last_linear = nn.Linear(self.input_dim, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
         self.activ_4 = get_activation(self.activation)
-
 
     # Input is of size
     def forward(self, input):
@@ -304,7 +325,8 @@ class Simple_Feedforward_3Layer_ICNN_LastFull_Quadratic(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, activation):
 
-        super(Simple_Feedforward_3Layer_ICNN_LastFull_Quadratic, self).__init__()
+        super(Simple_Feedforward_3Layer_ICNN_LastFull_Quadratic,
+              self).__init__()
 
         # For now I am hardcoding it as three hiden layers
         # x, h_1, h_2, h_3, f(x)
@@ -313,23 +335,26 @@ class Simple_Feedforward_3Layer_ICNN_LastFull_Quadratic(nn.Module):
         self.hidden_dim = hidden_dim
         self.activation = activation
 
-        # x -> h_1        
+        # x -> h_1
         self.fc1_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
         self.activ_1 = get_activation(self.activation)
 
         self.fc2_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc2_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc2_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_2 = get_activation(self.activation)
 
         self.fc3_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc3_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc3_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_3 = get_activation(self.activation)
 
         self.last_convex = ConvexLinear(self.hidden_dim, 1, bias=False)
         self.last_linear = nn.Linear(self.input_dim, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
-        #self.activ_4 = nn.LeakyReLU(0.2)
-
+        # self.activ_4 = nn.LeakyReLU(0.2)
 
     # Input is of size
     def forward(self, input):
@@ -353,7 +378,8 @@ class Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, activation):
 
-        super(Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic, self).__init__()
+        super(Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic,
+              self).__init__()
 
         # For now I am hardcoding it as three hiden layers
         # x, h_1, h_2, h_3, f(x)
@@ -362,27 +388,32 @@ class Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic(nn.Module):
         self.hidden_dim = hidden_dim
         self.activation = activation
 
-        # x -> h_1        
+        # x -> h_1
         self.fc1_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
         self.activ_1 = get_activation(self.activation)
 
         self.fc2_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc2_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc2_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_2 = get_activation(self.activation)
 
         self.fc3_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc3_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc3_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_3 = get_activation(self.activation)
 
         self.fc4_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc4_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc4_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_4 = get_activation(self.activation)
 
         self.last_convex = ConvexLinear(self.hidden_dim, 1, bias=False)
         self.last_linear = nn.Linear(self.input_dim, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
-        #self.activ_4 = nn.LeakyReLU(0.2)
-
+        # self.activ_4 = nn.LeakyReLU(0.2)
 
     # Input is of size
     def forward(self, input):
@@ -408,7 +439,8 @@ class Simple_Feedforward_4Layer_ICNN_LastFull_Quadratic(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, activation):
 
-        super(Simple_Feedforward_4Layer_ICNN_LastFull_Quadratic, self).__init__()
+        super(Simple_Feedforward_4Layer_ICNN_LastFull_Quadratic,
+              self).__init__()
 
         # For now I am hardcoding it as three hiden layers
         # x, h_1, h_2, h_3, f(x)
@@ -417,27 +449,32 @@ class Simple_Feedforward_4Layer_ICNN_LastFull_Quadratic(nn.Module):
         self.hidden_dim = hidden_dim
         self.activation = activation
 
-        # x -> h_1        
+        # x -> h_1
         self.fc1_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
         self.activ_1 = get_activation(self.activation)
 
         self.fc2_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc2_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc2_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_2 = get_activation(self.activation)
 
         self.fc3_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc3_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc3_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_3 = get_activation(self.activation)
 
         self.fc4_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc4_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc4_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_4 = get_activation(self.activation)
 
         self.last_convex = ConvexLinear(self.hidden_dim, 1, bias=False)
         self.last_linear = nn.Linear(self.input_dim, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
-        #self.activ_4 = nn.LeakyReLU(0.2)
-
+        # self.activ_4 = nn.LeakyReLU(0.2)
 
     # Input is of size
     def forward(self, input):
@@ -463,7 +500,8 @@ class Simple_Feedforward_5Layer_ICNN_LastInp_Quadratic(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, activation):
 
-        super(Simple_Feedforward_5Layer_ICNN_LastInp_Quadratic, self).__init__()
+        super(Simple_Feedforward_5Layer_ICNN_LastInp_Quadratic,
+              self).__init__()
 
         # For now I am hardcoding it as three hiden layers
         # x, h_1, h_2, h_3, f(x)
@@ -472,31 +510,40 @@ class Simple_Feedforward_5Layer_ICNN_LastInp_Quadratic(nn.Module):
         self.hidden_dim = hidden_dim
         self.activation = activation
 
-        # x -> h_1        
+        # x -> h_1
         self.fc1_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
         self.activ_1 = get_activation(self.activation)
 
-        self.fc2_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc2_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc2_normal = nn.Linear(self.input_dim,
+                                    self.hidden_dim,
+                                    bias=True)
+        self.fc2_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_2 = get_activation(self.activation)
 
         self.fc3_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc3_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc3_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_3 = get_activation(self.activation)
 
         self.fc4_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc4_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc4_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_4 = get_activation(self.activation)
 
         self.fc5_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc5_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc5_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_5 = get_activation(self.activation)
 
         self.last_convex = ConvexLinear(self.hidden_dim, 1, bias=False)
         self.last_linear = nn.Linear(self.input_dim, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
-        #self.activ_4 = nn.LeakyReLU(0.2)
-
+        # self.activ_4 = nn.LeakyReLU(0.2)
 
     # Input is of size
     def forward(self, input):
@@ -524,7 +571,8 @@ class Simple_Feedforward_5Layer_ICNN_LastFull_Quadratic(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, activation):
 
-        super(Simple_Feedforward_5Layer_ICNN_LastFull_Quadratic, self).__init__()
+        super(Simple_Feedforward_5Layer_ICNN_LastFull_Quadratic,
+              self).__init__()
 
         # For now I am hardcoding it as three hiden layers
         # x, h_1, h_2, h_3, f(x)
@@ -533,31 +581,38 @@ class Simple_Feedforward_5Layer_ICNN_LastFull_Quadratic(nn.Module):
         self.hidden_dim = hidden_dim
         self.activation = activation
 
-        # x -> h_1        
+        # x -> h_1
         self.fc1_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
         self.activ_1 = get_activation(self.activation)
 
         self.fc2_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc2_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc2_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_2 = get_activation(self.activation)
 
         self.fc3_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc3_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc3_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_3 = get_activation(self.activation)
 
         self.fc4_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc4_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc4_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_4 = get_activation(self.activation)
 
         self.fc5_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.fc5_convex = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.fc5_convex = ConvexLinear(self.hidden_dim,
+                                       self.hidden_dim,
+                                       bias=False)
         self.activ_5 = get_activation(self.activation)
 
         self.last_convex = ConvexLinear(self.hidden_dim, 1, bias=False)
         self.last_linear = nn.Linear(self.input_dim, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
-        #self.activ_4 = nn.LeakyReLU(0.2)
-
+        # self.activ_4 = nn.LeakyReLU(0.2)
 
     # Input is of size
     def forward(self, input):
@@ -611,8 +666,7 @@ class my_own_Conv_ICNN_with_skip(nn.Module):
         self.last_convex = ConvexLinear(500, 1, bias=False)
         self.last_linear = nn.Linear(784, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
-        #self.activ_4 = nn.LeakyReLU(0.2)
-
+        # self.activ_4 = nn.LeakyReLU(0.2)
 
     # Input is of size
     def forward(self, input):
@@ -634,7 +688,7 @@ class my_own_Conv_ICNN_with_skip(nn.Module):
         # print(x.size())
 
         x = x.view(-1, 4 * 4 * 50)
-        #input = input.view(-1, 784)
+        # input = input.view(-1, 784)
         # print(input.size())
         x = self.activ_4(self.fc4_normal(input).add(self.fc4_convex(x)))
 
@@ -655,13 +709,23 @@ class LeNet_ICNN_without_skip(nn.Module):
         # x, h_1, h_2, h_3, f(x)
 
         # x -> h_1
-        self.conv1_normal = nn.Conv2d(in_channels=1, out_channels=6, kernel_size=5, stride=1, padding=2, bias=True)
+        self.conv1_normal = nn.Conv2d(in_channels=1,
+                                      out_channels=6,
+                                      kernel_size=5,
+                                      stride=1,
+                                      padding=2,
+                                      bias=True)
         self.activ_1_squared = get_activation(activation)
         self.max_pool1 = nn.MaxPool2d(2, 2)
 
         # (x,h_1) -> h_2
         # self.conv2_normal = nn.Conv2d(1, 50, 14, 2, bias=True)
-        self.conv2_convex = ConvexConv2d(in_channels=6, out_channels=16, kernel_size=5, stride=1, padding=0, bias=True)
+        self.conv2_convex = ConvexConv2d(in_channels=6,
+                                         out_channels=16,
+                                         kernel_size=5,
+                                         stride=1,
+                                         padding=0,
+                                         bias=True)
         self.activ_2 = get_activation(activation)
         self.max_pool2 = nn.MaxPool2d(2, 2)
 
@@ -676,8 +740,7 @@ class LeNet_ICNN_without_skip(nn.Module):
         self.last_convex = ConvexLinear(84, 1, bias=True)
         self.last_linear = nn.Linear(784, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
-        #self.activ_4 = nn.LeakyReLU(0.2)
-
+        # self.activ_4 = nn.LeakyReLU(0.2)
 
     # Input is of size
     def forward(self, input):
@@ -699,7 +762,7 @@ class LeNet_ICNN_without_skip(nn.Module):
         # print(x.size())
 
         x = x.view(-1, 5 * 5 * 16)
-        #input = input.view(-1, 784)
+        # input = input.view(-1, 784)
         # print(input.size())
         x = self.activ_fc1(self.fc1_convex(x))
 
@@ -722,14 +785,29 @@ class LeNet_ICNN_with_skip(nn.Module):
         # x, h_1, h_2, h_3, f(x)
 
         # x -> h_1
-        self.conv1_normal = nn.Conv2d(in_channels=1, out_channels=6, kernel_size=5, stride=1, padding=2, bias=True)
+        self.conv1_normal = nn.Conv2d(in_channels=1,
+                                      out_channels=6,
+                                      kernel_size=5,
+                                      stride=1,
+                                      padding=2,
+                                      bias=True)
         self.activ_1_squared = get_activation(activation)
         self.max_pool1 = nn.MaxPool2d(2, 2)
 
         # (x,h_1) -> h_2
         # self.conv2_normal = nn.Conv2d(1, 50, 14, 2, bias=True)
-        self.conv2_convex = ConvexConv2d(in_channels=6, out_channels=16, kernel_size=5, stride=1, padding=0, bias=False)
-        self.conv2_normal = nn.Conv2d(in_channels=1, out_channels=16, kernel_size=9, stride=2, padding=0, bias=True)
+        self.conv2_convex = ConvexConv2d(in_channels=6,
+                                         out_channels=16,
+                                         kernel_size=5,
+                                         stride=1,
+                                         padding=0,
+                                         bias=False)
+        self.conv2_normal = nn.Conv2d(in_channels=1,
+                                      out_channels=16,
+                                      kernel_size=9,
+                                      stride=2,
+                                      padding=0,
+                                      bias=True)
         self.activ_2 = get_activation(activation)
         self.max_pool2 = nn.MaxPool2d(2, 2)
 
@@ -746,8 +824,7 @@ class LeNet_ICNN_with_skip(nn.Module):
         self.last_convex = ConvexLinear(84, 1, bias=False)
         self.last_linear = nn.Linear(784, 1, bias=True)
         # We might also not want to include an activation in the last  layer.
-        #self.activ_4 = nn.LeakyReLU(0.2)
-
+        # self.activ_4 = nn.LeakyReLU(0.2)
 
     # Input is of size
     def forward(self, input):
@@ -769,7 +846,7 @@ class LeNet_ICNN_with_skip(nn.Module):
         # print(x.size())
 
         x = x.view(-1, 5 * 5 * 16)
-        #input = input.view(-1, 784)
+        # input = input.view(-1, 784)
         # print(input.size())
         x = self.activ_fc1(self.fc1_convex(x).add(self.fc1_normal(input)))
 
@@ -778,6 +855,7 @@ class LeNet_ICNN_with_skip(nn.Module):
         x = self.last_convex(x).add(self.last_linear(input))
 
         return x
+
 
 class Simple_Feedforward_3Layer_NN(nn.Module):
 
@@ -793,20 +871,25 @@ class Simple_Feedforward_3Layer_NN(nn.Module):
         self.activation = activation
         self.output_dim = output_dim
 
-        # x -> h_1        
+        # x -> h_1
         self.fc1_normal = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
         self.activ_1 = get_activation(self.activation)
 
-        self.fc2_normal = nn.Linear(self.hidden_dim, self.hidden_dim, bias=True)
+        self.fc2_normal = nn.Linear(self.hidden_dim,
+                                    self.hidden_dim,
+                                    bias=True)
         self.activ_2 = get_activation(self.activation)
 
-        self.fc3_normal = nn.Linear(self.hidden_dim, self.hidden_dim, bias=True)
+        self.fc3_normal = nn.Linear(self.hidden_dim,
+                                    self.hidden_dim,
+                                    bias=True)
         self.activ_3 = get_activation(self.activation)
 
-        self.last_linear = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
+        self.last_linear = nn.Linear(self.hidden_dim,
+                                     self.output_dim,
+                                     bias=True)
         # We might also not want to include an activation in the last  layer.
-        #self.activ_4 = nn.LeakyReLU(0.2)
-
+        # self.activ_4 = nn.LeakyReLU(0.2)
 
     # Input is of size
     def forward(self, input):
@@ -824,6 +907,7 @@ class Simple_Feedforward_3Layer_NN(nn.Module):
         x = self.last_linear(x)
 
         return x
+
 
 class Simple_quadratic(nn.Module):
 
@@ -844,15 +928,18 @@ class Simple_quadratic(nn.Module):
 
         # input_image = input.view(-1, 1, 28, 28)
 
-        x = 0.5*input.pow(2).sum(dim=1,keepdim=True)
+        x = 0.5*input.pow(2).sum(dim=1, keepdim=True)
 
         return x
+
+
 '''
 class Simple_Feedforward_3Layer_ICNN_All_Quadratic_New(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, activation):
 
-        super(Simple_Feedforward_3Layer_ICNN_All_Quadratic_New, self).__init__()
+        super(Simple_Feedforward_3Layer_ICNN_All_Quadratic_New,
+              self).__init__()
 
         # For now I am hardcoding it as three hiden layers
         # x, h_1, h_2, h_3, f(x)
@@ -861,17 +948,27 @@ class Simple_Feedforward_3Layer_ICNN_All_Quadratic_New(nn.Module):
         self.hidden_dim = hidden_dim
         self.activation = activation
 
-        # x -> h_1        
+        # x -> h_1
         self.quad_1 = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.convex_quad_1 = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
+        self.convex_quad_1 = ConvexLinear(self.hidden_dim,
+                                          self.hidden_dim,
+                                          bias=False)
 
         self.quad_2 = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.convex_quad_2 = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
-        self.convex_2 = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=True)
+        self.convex_quad_2 = ConvexLinear(self.hidden_dim,
+                                          self.hidden_dim,
+                                          bias=False)
+        self.convex_2 = ConvexLinear(self.hidden_dim,
+                                     self.hidden_dim,
+                                     bias=True)
 
         self.quad_3 = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
-        self.convex_quad_3 = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=False)
-        self.convex_3 = ConvexLinear(self.hidden_dim, self.hidden_dim, bias=True)
+        self.convex_quad_3 = ConvexLinear(self.hidden_dim,
+                                          self.hidden_dim,
+                                          bias=False)
+        self.convex_3 = ConvexLinear(self.hidden_dim,
+                                     self.hidden_dim,
+                                     bias=True)
 
         self.quad_last = nn.Linear(self.input_dim, self.hidden_dim, bias=True)
         self.convex_quad_last = ConvexLinear(self.hidden_dim, 1, bias=False)
@@ -890,11 +987,15 @@ class Simple_Feedforward_3Layer_ICNN_All_Quadratic_New(nn.Module):
 
         h = self.convex_quad_1(self.quad_1(input)).pow(2))/self.hidden_dim
 
-        h = self.convex_quad_2(self.quad_2(input)).pow(2))/self.hidden_dim +  self.convex_2(self.active(h))/self.hidden_dim
+        h = self.convex_quad_2(self.quad_2(input)).pow(2))/self.hidden_dim +\\
+    self.convex_2(self.active(h))/self.hidden_dim
 
-        h = self.convex_quad_3(self.quad_3(input)).pow(2))/self.hidden_dim +  self.convex_3(self.active(h))/self.hidden_dim
+        h = self.convex_quad_3(self.quad_3(input)).pow(2))/self.hidden_dim +\\
+    self.convex_3(self.active(h))/self.hidden_dim
 
-        f = self.convex_quad_last(self.quad_last(input)).pow(2))/self.hidden_dim +  self.convex_last(self.active(h))/self.hidden_dim
+        f = self.convex_quad_last(self.quad_last(input)).pow(2))/\\
+    self.hidden_dim +\\
+    self.convex_last(self.active(h))/self.hidden_dim
 
         return x
 '''

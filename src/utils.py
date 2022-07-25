@@ -7,14 +7,11 @@ from bokeh.io import output_file, save, show
 from bokeh.plotting import figure
 from bokeh.layouts import column
 
-
-
-
-#from bokeh.charts import Line, defaults
+# from bokeh.charts import Line, defaults
 #
-#defaults.width = 800
-#defaults.height = 400
-#defaults.tools = 'pan,box_zoom,wheel_zoom,box_select,hover,resize,reset,save'
+# defaults.width = 800
+# defaults.height = 400
+# defaults.tools = 'pan,box_zoom,wheel_zoom,box_select,hover,resize,reset,save'
 
 
 def setup_logging(log_file='log.txt'):
@@ -67,7 +64,7 @@ class ResultsLog(object):
             plot = column(*self.figures)
             show(plot)
 
-    #def plot(self, *kargs, **kwargs):
+    # def plot(self, *kargs, **kwargs):
     #    line = Line(data=self.results, *kargs, **kwargs)
     #    self.figures.append(line)
 
@@ -77,7 +74,11 @@ class ResultsLog(object):
         self.figures.append(fig)
 
 
-def save_checkpoint(state, is_best, path='.', filename='checkpoint.pth.tar', save_all=False):
+def save_checkpoint(state,
+                    is_best, path='.',
+                    filename='checkpoint.pth.tar',
+                    save_all=False):
+
     filename = os.path.join(path, filename)
     torch.save(state, filename)
     if is_best:
@@ -104,6 +105,7 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
 
 __optimizers = {
     'SGD': torch.optim.SGD,

@@ -13,6 +13,7 @@ import pandas as pd
 from torch.utils import data
 from skimage import io
 
+
 class CelebA(data.Dataset):
     def __init__(self,
                  csv_file,
@@ -26,7 +27,7 @@ class CelebA(data.Dataset):
                 on a sample.
         """
         self.celeba = pd.read_csv(csv_file)
-        
+
         self.root_dir = root_dir
         self.transform = transform
 
@@ -45,4 +46,3 @@ class CelebA(data.Dataset):
             image = self.transform(image)
 
         return image
-    
