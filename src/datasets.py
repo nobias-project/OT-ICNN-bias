@@ -41,8 +41,9 @@ class CelebA(data.Dataset):
         img_path = os.path.join(self.root_dir,
                                 self.celeba.loc[idx, "image_id"])
         image = io.imread(img_path)
+        
 
         if self.transform:
             image = self.transform(image)
 
-        return image
+        return image,  self.celeba.loc[idx, "image_id"]

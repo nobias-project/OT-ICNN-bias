@@ -434,7 +434,7 @@ def train(epoch):
 
     g_Constraint_loss_value_epoch = 0
 
-    for batch_idx, real_data in enumerate(train_loader):
+    for batch_idx, (real_data, _) in enumerate(train_loader):
 
         # count += 1
         real_data = Features_X(real_data)
@@ -450,8 +450,8 @@ def train(epoch):
                                                batch_size=len(real_data),
                                                shuffle=True,
                                                **kwargs)
-        y = next(iter(Y_loader)).float()
-        y = Features_Y(y)
+        y, _ = next(iter(Y_loader))
+        y = Features_Y(y.float())
         y = Variable(y, requires_grad=True)
 
         if args.cuda:
