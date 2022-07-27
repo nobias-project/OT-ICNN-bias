@@ -46,4 +46,4 @@ class CelebA(data.Dataset):
         if self.transform:
             image = self.transform(image)
 
-        return image,  self.celeba.loc[idx, "image_id"]
+        return image,  idx, self.celeba.loc[idx, "image_id"]

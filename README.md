@@ -3,10 +3,7 @@ This project aims at exploiting Optimal Transport techniques for the purpose of 
 
 This work is inspired by the paper [optimal transport mapping via input convex neural neworks](https://arxiv.org/abs/1908.10962)
 
-The repository is forked from 
-```
-* https://github.com/AmirTag/OT-ICNN
-```
+The repository is forked from [https://github.com/AmirTag/OT-ICNN](https://github.com/AmirTag/OT-ICNN)
 
 ## Acknowledgments
 ```

@@ -39,7 +39,7 @@ parser.add_argument('--INPUT_DIM',
 
 parser.add_argument('--BATCH_SIZE',
                     type=int,
-                    default=60,
+                    default=25,
                     help='size of the batches')
 
 parser.add_argument('--epochs',
@@ -162,7 +162,7 @@ random.seed(args.seed)
 # Storing stuff
 
 if args.optimizer == 'SGD':
-    results_save_path = ('../results/Results_CelebA_Toy_Beard/'
+    results_save_path = ('../results/Results_CelebA/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{10}_mean_{11}/optim_{8}lr_{2}momen_{7}/'
                          'gen_{9}/batch_{3}/trial_{4}_last_{12}_qudr').format(
@@ -181,7 +181,7 @@ if args.optimizer == 'SGD':
                                     'full' if args.full_quadratic else 'inp')
 
 elif args.optimizer == 'Adam':
-    results_save_path = ('../results/Results_CelebA_Toy_Beard/'
+    results_save_path = ('../results/Results_CelebA/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{11}_mean_{12}/'
                          'optim_{9}lr_{2}betas_{7}_{8}/gen_{10}/batch_{3}/'
@@ -215,20 +215,22 @@ kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
 
 ################################################################
 # Data stuff
+
 features = facenet.InceptionResnetV1(pretrained='vggface2').eval()
 transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Resize(160)])
-X_data = src.datasets.CelebA("../data/celeba/celebA_sample_male.csv",
+
+X_data = src.datasets.CelebA("../data/celeba/celebA_female.csv",
                              "../data/celeba/Img_folder/Img",
                              transform=transform)
-
 train_loader = torch.utils.data.DataLoader(X_data,
                                            batch_size=args.BATCH_SIZE,
                                            shuffle=True,
                                            **kwargs)
 logging.info("Created the data loader for X\n")
 
-Y_data = src.datasets.CelebA("../data/celeba/celebA_sample_female.csv",
+
+Y_data = src.datasets.CelebA("../data/celeba/celebA_male.csv",
                              "../data/celeba/Img_folder/Img",
                              transform=transform)
 
@@ -352,7 +354,7 @@ elif args.NUM_LAYERS == 5:
                                                         args.NUM_NEURON,
                                                         args.activation)
 
-### Form a list of positive weight parameters
+# Form a list of positive weight parameters
 # and also initialize them with positive values
 f_positive_params = []
 
