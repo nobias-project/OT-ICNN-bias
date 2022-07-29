@@ -18,15 +18,21 @@ class CelebA(data.Dataset):
     def __init__(self,
                  csv_file,
                  root_dir,
+                 df=None,
                  transform=None):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
             root_dir (string): Directory with all the images.
+            df (pd.DataFrame): if csv_file is None, a panda DataFrame must be
+            passed.
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.celeba = pd.read_csv(csv_file)
+        if csv_file:
+            self.celeba = pd.read_csv(csv_file)
+        else:
+            self.celeba = df
 
         self.root_dir = root_dir
         self.transform = transform

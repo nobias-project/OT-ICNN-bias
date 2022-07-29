@@ -20,7 +20,7 @@ from src.utils import *
 from torchvision import transforms
 from torchvision.utils import make_grid
 from PIL import Image
-
+from sklearn.cluster import KMeans
 
 parser = argparse.ArgumentParser(description='PyTorch CelebA Toy Beard '
                                              'Experiment Evaluation')
@@ -44,6 +44,27 @@ args = parser.parse_args()
 
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
+
+def save_images_as_grid(peth, array_img_vectors):
+
+    array_img_vectors = torch.from_numpy(array_img_vectors)\
+        .float().permute(0, 3, 1, 2)
+    grid = make_grid(array_img_vectors, nrow=6, normalize=True)*255
+    ndarr = grid.to('cpu', torch.uint8).numpy().T
+    im = Image.fromarray(ndarr.transpose(1, 0, 2))
+
+    im.save(path)
+
+
+def compute_optimal_transport_map(y, convex_g):
+
+    g_of_y = convex_g(y).sum()
+
+    grad_g_of_y = torch.autograd.grad(g_of_y, y, create_graph=True)[0]
+
+    return grad_g_of_y
+
+
 results_save_path = ('../results/Results_CelebA/'
                      'input_dim_512/init_trunc_inv_sqrt/layers_3/neuron_1024/'
                      'lambda_cvx_0.1_mean_0.0/'
@@ -52,6 +73,7 @@ results_save_path = ('../results/Results_CelebA/'
 model_save_path = results_save_path + '/storing_models'
 
 df = pd.read_csv("../data/celeba/celebA_female.csv")
+df["values1"] = [None]*len(df)
 df["values"] = [None]*len(df)
 features = facenet.InceptionResnetV1(pretrained='vggface2').eval()
 transform = transforms.Compose([transforms.ToTensor(),
@@ -61,45 +83,87 @@ X_data = src.datasets.CelebA("../data/celeba/celebA_female.csv",
                              "../data/celeba/Img_folder/Img",
                              transform=transform)
 train_loader = torch.utils.data.DataLoader(X_data,
-                                           batch_size=args.BATCH_SIZE,
-                                           shuffle=True)
+                                           batch_size=1)
 
 convex_f = Simple_Feedforward_3Layer_ICNN_LastFull_Quadratic(512,
                                                              1024,
                                                              "leaky_relu")
 convex_f.load_state_dict(
     torch.load(model_save_path + '/convex_f_epoch_{}.pt'.format(args.epoch)))
+convex_f = convex_f.eval()
 
 if args.cuda:
     convex_f.cuda()
     features.cuda()
 
 for imgs, ids, _ in train_loader:
-
+    ids = ids.item()
     if args.cuda:
         imgs = imgs.cuda()
-
     features_vector = features(imgs)
-    vals = convex_f(features_vector).detach().cpu().numpy()
-    df.loc[ids, "values"] = vals
+    vals = torch.linalg.norm(
+        compute_optimal_transport_map(features_vector,
+                                      convex_f),
+        2,
+        1).detach().cpu().item()
 
-df = df.sort_values(by="values", ascending=False)
-imgs = df["image_id"][:36]
+    vals1 = (
+        0.5*(torch.linalg.norm(features_vector, 2, dim=1)**2)
+        - convex_f(features_vector).reshape(-1)
+        ).detach().cpu().item()
+    df.loc[ids, "values"] = vals
+    df.loc[ids, "values1"] = vals1
+
+df.to_csv("../data/celeba/celebA_female.csv", index=False)
+
+img_ids = df.sort_values(by="values", ascending=False)["image_id"][:36]
 array_img_vectors = np.array(
     [skimage.io.imread("../data/celeba/Img_folder/Img/" + file)
-     for file in imgs])
+     for file in img_ids])
+
+path = results_save_path+'/grid_epoch_{}_female.jpeg'.format(args.epoch)
+save_images_as_grid(path, array_img_vectors)
+
+img_ids = df.sort_values(by="values1", ascending=False)["image_id"][:36]
+array_img_vectors = np.array(
+    [skimage.io.imread("../data/celeba/Img_folder/Img/" + file)
+     for file in img_ids])
 
 
-def save_images_as_grid(array_img_vectors, epoch):
+path = results_save_path+'/grid_epoch_{}_female_value2.jpeg'.format(args.epoch)
+save_images_as_grid(path, array_img_vectors)
 
-    array_img_vectors = torch.from_numpy(array_img_vectors)\
-        .float().permute(0, 3, 1, 2)
-    grid = make_grid(array_img_vectors, nrow=6, normalize=True)*255
-    print(grid.shape)
-    ndarr = grid.to('cpu', torch.uint8).numpy()
-    im = Image.fromarray(ndarr[0])
-
-    im.save(results_save_path+'/grid_epoch_{}.jpeg'.format(epoch))
-
-
-save_images_as_grid(array_img_vectors, args.epoch)
+# =============================================================================
+# 
+# ##################################################################
+# # cluster the top 10% images
+# last_decile = df[df["values"] >= np.percentile(df["values"], 90)]
+# 
+# last_decile = last_decile.reset_index()
+# X_data = src.datasets.CelebA(None,
+#                              "../data/celeba/Img_folder/Img",
+#                              df=last_decile,
+#                              transform=transform)
+# 
+# train_loader = torch.utils.data.DataLoader(X_data,
+#                                            batch_size=args.BATCH_SIZE)
+# 
+# space = []
+# for imgs, ids, _ in train_loader:
+#     if args.cuda:
+#         imgs = imgs.cuda()
+# 
+#     with torch.no_grad():
+#         features_vector = features(imgs).cpu().numpy()
+# 
+#     space.append(features_vector)
+# 
+# space = np.concatenate(space)
+# 
+# kmeans = KMeans(4)
+# kmeans.fit(space)
+# 
+# last_decile["cluster"] = kmeans.labels_
+# last_decile.to_csv("../data/celeba/celebA_female_last_decile.csv", index=False)
+# 
+# =============================================================================

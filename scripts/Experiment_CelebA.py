@@ -16,6 +16,7 @@ import src.datasets
 import src.optimal_transport_modules
 
 from torchvision import transforms
+from torchvision.models import resnet18, ResNet18_Weights
 from torch.autograd import Variable
 from torchvision.utils import make_grid
 from matplotlib import pyplot as plt
@@ -29,12 +30,12 @@ matplotlib.use('tkagg')
 
 
 # Training settings. Important ones first
-parser = argparse.ArgumentParser(description='PyTorch CelebA Toy'
-                                             ' Beard Experiment')
+parser = argparse.ArgumentParser(description='PyTorch CelebA '
+                                             'Beard Experiment')
 
 parser.add_argument('--INPUT_DIM',
                     type=int,
-                    default=512,
+                    default=1000,
                     help='dimensionality of the input x')
 
 parser.add_argument('--BATCH_SIZE',
@@ -107,20 +108,20 @@ parser.add_argument('--beta2', type=float, default=0.99)
 parser.add_argument('--LAMBDA_CVX',
                     type=float,
                     default=0.1,
-                    help='Regularization constant for'
+                    help='Regularization constant for '
                     'positive weight constraints')
 parser.add_argument('--LAMBDA_MEAN',
                     type=float,
                     default=0.0,
-                    help='Regularization constant for'
-                    ' matching mean and covariance')
+                    help='Regularization constant for '
+                    'matching mean and covariance')
 
 parser.add_argument('--log-interval',
                     type=int,
                     default=10,
                     metavar='N',
-                    help='how many batches to wait'
-                    ' before logging training status')
+                    help='how many batches to wait '
+                    'before logging training status')
 
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
@@ -162,7 +163,7 @@ random.seed(args.seed)
 # Storing stuff
 
 if args.optimizer == 'SGD':
-    results_save_path = ('../results/Results_CelebA/'
+    results_save_path = ('../results/Results_CelebA_ResNet18/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{10}_mean_{11}/optim_{8}lr_{2}momen_{7}/'
                          'gen_{9}/batch_{3}/trial_{4}_last_{12}_qudr').format(
@@ -181,7 +182,7 @@ if args.optimizer == 'SGD':
                                     'full' if args.full_quadratic else 'inp')
 
 elif args.optimizer == 'Adam':
-    results_save_path = ('../results/Results_CelebA/'
+    results_save_path = ('../results/Results_CelebA_ResNet18/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{11}_mean_{12}/'
                          'optim_{9}lr_{2}betas_{7}_{8}/gen_{10}/batch_{3}/'
@@ -216,7 +217,7 @@ kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
 ################################################################
 # Data stuff
 
-features = facenet.InceptionResnetV1(pretrained='vggface2').eval()
+features = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).eval()
 transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Resize(160)])
 
