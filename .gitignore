@@ -5,5 +5,7 @@ data
 .spyproject
 *.drawio
 results/Results*
+.DS_Store
+.idea
 
 # Temporary
