@@ -43,9 +43,9 @@ parser.add_argument('--BATCH_SIZE',
 args = parser.parse_args()
 
 args.cuda = not args.no_cuda and torch.cuda.is_available()
+args.mps = torch.backends.mps.is_available()
 
-
-def save_images_as_grid(peth, array_img_vectors):
+def save_images_as_grid(path, array_img_vectors):
 
     array_img_vectors = torch.from_numpy(array_img_vectors)\
         .float().permute(0, 3, 1, 2)
@@ -95,11 +95,17 @@ convex_f = convex_f.eval()
 if args.cuda:
     convex_f.cuda()
     features.cuda()
+elif args.mps:
+    convex_f.to("mps")
+    features.to("mps")
 
 for imgs, ids, _ in train_loader:
     ids = ids.item()
     if args.cuda:
         imgs = imgs.cuda()
+    elif args.mps:
+        imgs = imgs.to("mps")
+
     features_vector = features(imgs)
     vals = torch.linalg.norm(
         compute_optimal_transport_map(features_vector,
