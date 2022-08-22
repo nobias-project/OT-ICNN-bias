@@ -35,7 +35,7 @@ parser = argparse.ArgumentParser(description='PyTorch CelebA '
 
 parser.add_argument('--INPUT_DIM',
                     type=int,
-                    default=1000,
+                    default=512,
                     help='dimensionality of the input x')
 
 parser.add_argument('--BATCH_SIZE',
@@ -148,7 +148,7 @@ parser.add_argument('--no-cuda',
 args = parser.parse_args()
 
 args.cuda = not args.no_cuda and torch.cuda.is_available()
-args.mps = False # torch.backends.mps.is_available()
+args.mps = False  # torch.backends.mps.is_available()
 
 args.lr_schedule = 2 if args.BATCH_SIZE == 60 else 4
 
@@ -220,6 +220,8 @@ kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda or args.mps else {}
 # Data stuff
 
 features = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).eval()
+features.fc = nn.Identity()
+
 transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Resize(160)])
 
@@ -469,7 +471,8 @@ def train(epoch):
         # sampling from kernel estimator
         kernel_sample = list()
         for tens in y:
-            m = torch.distributions.MultivariateNormal(tens, torch.eye(len(tens)))
+            m = torch.distributions.MultivariateNormal(tens,
+                                                       torch.eye(len(tens)))
             sample = m.sample()
             kernel_sample.append(sample)
 
@@ -634,64 +637,62 @@ def save_images_as_grid(array_img_vectors, epoch):
 
 ###################################################
 # Training stuff
-if __name__ == "__main__":
-    total_w_2_epoch_loss_list = []
-    total_g_OT_epoch_loss_list = []
-    total_g_Constraint_epoch_loss_list = []
+total_w_2_epoch_loss_list = []
+total_g_OT_epoch_loss_list = []
+total_g_Constraint_epoch_loss_list = []
 
-    df = pd.read_csv("../data/celeba/celebA_sample_male.csv")
+df = pd.read_csv("../data/celeba/celebA_sample_male.csv")
 
-    for epoch in range(1, args.epochs + 1):
+for epoch in range(1, args.epochs + 1):
 
-        # transported_y = compute_optimal_transport_map(y_plot, convex_g)
+    # transported_y = compute_optimal_transport_map(y_plot, convex_g)
 
-        # plot_transported_samples(transported_y, epoch)
+    # plot_transported_samples(transported_y, epoch)
 
-        (w_2_loss_value_epoch,
-        g_OT_loss_value_epoch,
-        g_Constraint_loss_value_epoch) = train(epoch)
+    (w_2_loss_value_epoch,
+     g_OT_loss_value_epoch,
+     g_Constraint_loss_value_epoch) = train(epoch)
 
-        total_w_2_epoch_loss_list.append(w_2_loss_value_epoch)
-        total_g_OT_epoch_loss_list.append(g_OT_loss_value_epoch)
-        total_g_Constraint_epoch_loss_list.append(g_Constraint_loss_value_epoch)
+    total_w_2_epoch_loss_list.append(w_2_loss_value_epoch)
+    total_g_OT_epoch_loss_list.append(g_OT_loss_value_epoch)
+    total_g_Constraint_epoch_loss_list.append(g_Constraint_loss_value_epoch)
 
-        if epoch % args.lr_schedule == 0:
+    if epoch % args.lr_schedule == 0:
 
-            optimizer_g.param_groups[0]['lr'] *= 0.5
+        optimizer_g.param_groups[0]['lr'] *= 0.5
 
-            optimizer_f.param_groups[0]['lr'] *= 0.5
+        optimizer_f.param_groups[0]['lr'] *= 0.5
 
-        # if epoch % 10 == 0:
-        if epoch % 1 == 0:
-            torch.save(convex_f.state_dict(),
-                       model_save_path + '/convex_f_epoch_{0}.pt'.format(epoch))
-            torch.save(convex_g.state_dict(),
-                       model_save_path + '/convex_g_epoch_{0}.pt'.format(epoch))
+    # if epoch % 10 == 0:
+    if epoch % 1 == 0:
+        torch.save(convex_f.state_dict(),
+                   model_save_path + '/convex_f_epoch_{0}.pt'.format(epoch))
+        torch.save(convex_g.state_dict(),
+                   model_save_path + '/convex_g_epoch_{0}.pt'.format(epoch))
 
-        else:
-            torch.save(convex_f.state_dict(),
-                        model_save_path + '/convex_f_lastepoch.pt')
-            torch.save(convex_g.state_dict(),
-                        model_save_path + '/convex_g_lastepoch.pt')
+    else:
+        torch.save(convex_f.state_dict(),
+                   model_save_path + '/convex_f_lastepoch.pt')
+        torch.save(convex_g.state_dict(),
+                   model_save_path + '/convex_g_lastepoch.pt')
 
-    plt.plot(range(1, len(total_w_2_epoch_loss_list) + 1),
-            total_w_2_epoch_loss_list,
-            label='Training loss')
+plt.plot(range(1, len(total_w_2_epoch_loss_list) + 1),
+         total_w_2_epoch_loss_list,
+         label='Training loss')
 
-    plt.xlabel('iterations')
-    plt.ylabel(r'$W_2$-loss value')
-    plt.savefig(results_save_path + '/training_loss.png')
-    plt.show()
-    plt.clf()
+plt.xlabel('iterations')
+plt.ylabel(r'$W_2$-loss value')
+plt.savefig(results_save_path + '/training_loss.png')
+plt.show()
+plt.clf()
 
-    plt.plot(range(10, len(total_w_2_epoch_loss_list) + 1),
-            total_w_2_epoch_loss_list[9:],
-            label='Training loss')
-    plt.xlabel('iterations')
-    plt.ylabel(r'$W_2$-loss value')
-    plt.savefig(results_save_path + '/training_loss10+.png')
-    plt.show()
+plt.plot(range(10, len(total_w_2_epoch_loss_list) + 1),
+         total_w_2_epoch_loss_list[9:],
+         label='Training loss')
+plt.xlabel('iterations')
+plt.ylabel(r'$W_2$-loss value')
+plt.savefig(results_save_path + '/training_loss10+.png')
+plt.show()
 
-    logging.info("Training is finished and the models"
-                 " and plots are saved. Good job :)")
-
+logging.info("Training is finished and the models"
+             " and plots are saved. Good job :)")

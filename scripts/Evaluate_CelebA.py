@@ -9,6 +9,7 @@ Created on Fri Jul 22 13:55:17 2022
 from __future__ import print_function
 import argparse
 import torch
+import torch.nn as nn
 from src.optimal_transport_modules.icnn_modules import *
 import facenet_pytorch as facenet
 import numpy as np
@@ -21,12 +22,13 @@ from torchvision import transforms
 from torchvision.utils import make_grid
 from PIL import Image
 from sklearn.cluster import KMeans
+from torchvision.models import resnet18, ResNet18_Weights
 
 parser = argparse.ArgumentParser(description='PyTorch CelebA Toy Beard '
                                              'Experiment Evaluation')
 parser.add_argument('--epoch',
                     type=int,
-                    default=14,
+                    default=30,
                     metavar='S',
                     help='epoch to be evaluated')
 
@@ -44,6 +46,7 @@ args = parser.parse_args()
 
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 args.mps = torch.backends.mps.is_available()
+
 
 def save_images_as_grid(path, array_img_vectors):
 
@@ -65,21 +68,23 @@ def compute_optimal_transport_map(y, convex_g):
     return grad_g_of_y
 
 
-results_save_path = ('../results/Results_CelebA/'
-                     'input_dim_512/init_trunc_inv_sqrt/layers_3/neuron_1024/'
+results_save_path = ('../results/Results_CelebA_ResNet18/'
+                     'input_dim_1000/init_trunc_inv_sqrt/layers_3/neuron_1024/'
                      'lambda_cvx_0.1_mean_0.0/'
                      'optim_Adamlr_0.001betas_0.5_0.99/'
-                     'gen_16/batch_60/trial_1_last_inp_qudr')
+                     'gen_16/batch_25/trial_1_last_inp_qudr')
 model_save_path = results_save_path + '/storing_models'
 
-df = pd.read_csv("../data/celeba/celebA_female.csv")
-df["values1"] = [None]*len(df)
-df["values"] = [None]*len(df)
-features = facenet.InceptionResnetV1(pretrained='vggface2').eval()
+df = pd.read_csv("../data/celeba/list_attr_celeba.csv")
+df["values_resnet18"] = [None]*len(df)
+
+features = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).eval()
+features.fc = nn.Identity()
+
 transform = transforms.Compose([transforms.ToTensor(),
                                 transforms.Resize(160)])
 
-X_data = src.datasets.CelebA("../data/celeba/celebA_female.csv",
+X_data = src.datasets.CelebA("../data/celeba/list_attr_celeba.csv",
                              "../data/celeba/Img_folder/Img",
                              transform=transform)
 train_loader = torch.utils.data.DataLoader(X_data,
@@ -92,6 +97,13 @@ convex_f.load_state_dict(
     torch.load(model_save_path + '/convex_f_epoch_{}.pt'.format(args.epoch)))
 convex_f = convex_f.eval()
 
+convex_g = Simple_Feedforward_3Layer_ICNN_LastFull_Quadratic(512,
+                                                             1024,
+                                                             "leaky_relu")
+convex_g.load_state_dict(
+    torch.load(model_save_path + '/convex_g_epoch_{}.pt'.format(args.epoch)))
+convex_g = convex_g.eval()
+
 if args.cuda:
     convex_f.cuda()
     features.cuda()
@@ -99,6 +111,9 @@ elif args.mps:
     convex_f.to("mps")
     features.to("mps")
 
+
+features_list = list()
+val_g = list()
 for imgs, ids, _ in train_loader:
     ids = ids.item()
     if args.cuda:
@@ -107,38 +122,51 @@ for imgs, ids, _ in train_loader:
         imgs = imgs.to("mps")
 
     features_vector = features(imgs)
-    vals = torch.linalg.norm(
-        compute_optimal_transport_map(features_vector,
-                                      convex_f),
-        2,
-        1).detach().cpu().item()
+    
+    features_list.append(features_vector.detach().cpu().numpy())
 
-    vals1 = (
-        0.5*(torch.linalg.norm(features_vector, 2, dim=1)**2)
-        - convex_f(features_vector).reshape(-1)
-        ).detach().cpu().item()
-    df.loc[ids, "values"] = vals
-    df.loc[ids, "values1"] = vals1
+    if df.loc[ids, "Male"] == -1:
+        val = convex_f(features_vector).item()
+        df.loc[ids, "values_resnet18"] = val
+    else:
+        val = convex_g(features_vector).item()
+        df.loc[ids, "values_resnet18"] = val
 
-df.to_csv("../data/celeba/celebA_female.csv", index=False)
+features_array = np.concatenate(features_list)
+np.save(results_save_path + "feature_space.npy", features_array)
 
-img_ids = df.sort_values(by="values", ascending=False)["image_id"][:36]
-array_img_vectors = np.array(
-    [skimage.io.imread("../data/celeba/Img_folder/Img/" + file)
-     for file in img_ids])
+features_x = features_array[df["Male"] == -1]
+features_y = features_array[df["Male"] == 1]
 
-path = results_save_path+'/grid_epoch_{}_female.jpeg'.format(args.epoch)
-save_images_as_grid(path, array_img_vectors)
+df[df["Male"] == -1].values_resnet18 = .5*(np.linalg.norm(features_x).mean())\
+    - df[df["Male"] == -1].values_resnet18
+df[df["Male"] == 1].values_resnet18 = .5*(np.linalg.norm(features_y).mean())\
+    - df[df["Male"] == 1].values_resnet18
 
-img_ids = df.sort_values(by="values1", ascending=False)["image_id"][:36]
-array_img_vectors = np.array(
-    [skimage.io.imread("../data/celeba/Img_folder/Img/" + file)
-     for file in img_ids])
+mean_val_y = df[df["Male"] == 1].values_resnet18.mean()
+df[df["Male"] == -1].values_resnet18 += mean_val_y
 
+df.to_csv("../data/celeba/list_attr_celeba.csv", index=False)
 
-path = results_save_path+'/grid_epoch_{}_female_value2.jpeg'.format(args.epoch)
-save_images_as_grid(path, array_img_vectors)
-
+# =============================================================================
+# img_ids = df.sort_values(by="values", ascending=False)["image_id"][:36]
+# array_img_vectors = np.array(
+#     [skimage.io.imread("../data/celeba/Img_folder/Img/" + file)
+#      for file in img_ids])
+# 
+# path = results_save_path+'/grid_epoch_{}_female.jpeg'.format(args.epoch)
+# save_images_as_grid(path, array_img_vectors)
+# 
+# img_ids = df.sort_values(by="values1", ascending=False)["image_id"][:36]
+# array_img_vectors = np.array(
+#     [skimage.io.imread("../data/celeba/Img_folder/Img/" + file)
+#      for file in img_ids])
+# 
+# 
+# path = results_save_path+'/grid_epoch_{}_female_value2.jpeg'.format(args.epoch)
+# save_images_as_grid(path, array_img_vectors)
+# 
+# =============================================================================
 # =============================================================================
 # 
 # ##################################################################
