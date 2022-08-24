@@ -53,3 +53,30 @@ class CelebA(data.Dataset):
             image = self.transform(image)
 
         return image,  idx, self.celeba.loc[idx, "image_id"]
+
+
+class CelebA_Features(data.Dataset):
+    def __init__(self,
+                 csv_file,
+                 root_dir):
+        """
+        Args:
+            csv_file (string): Path to the csv file with annotations.
+            root_dir (string): Directory with all the features vectors.
+        """
+        self.celeba = pd.read_csv(csv_file)
+
+        self.root_dir = root_dir
+
+    def __len__(self):
+        return len(self.celeba)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        img_path = os.path.join(self.root_dir,
+                                self.celeba.loc[idx, "image_id"])
+        x = torch.load(img_path)
+
+        return x, idx, self.celeba.loc[idx, "image_id"], self.celeba.loc[idx, "Male"]
