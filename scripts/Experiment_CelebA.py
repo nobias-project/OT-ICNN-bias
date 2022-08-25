@@ -214,20 +214,14 @@ results = ResultsLog(results_file % 'csv', results_file % 'html')
 logging.info("saving to %s \n", results_save_path)
 logging.debug("run arguments: %s", args)
 
-kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda or args.mps else {}
+kwargs = {'num_workers': 1, 'pin_memory': True} if (args.cuda or
+                                                    args.mps) else {}
 
 ################################################################
 # Data stuff
 
-features = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).eval()
-features.fc = nn.Identity()
-
-transform = transforms.Compose([transforms.ToTensor(),
-                                transforms.Resize(160)])
-
-X_data = src.datasets.CelebA("../data/celeba/celebA_female.csv",
-                             "../data/celeba/Img_folder/Img",
-                             transform=transform)
+X_data = src.datasets.CelebA_Features("../data/celeba/celebA_female.csv",
+                                      "../data/resnet18")
 train_loader = torch.utils.data.DataLoader(X_data,
                                            batch_size=args.BATCH_SIZE,
                                            shuffle=True,
@@ -235,9 +229,10 @@ train_loader = torch.utils.data.DataLoader(X_data,
 logging.info("Created the data loader for X\n")
 
 
-Y_data = src.datasets.CelebA("../data/celeba/celebA_male.csv",
-                             "../data/celeba/Img_folder/Img",
-                             transform=transform)
+Y_data = src.datasets.CelebA_Features_Kernel(
+                    "../data/celeba/celebA_female.csv",
+                    "../data/resnet18",
+                    scale=1)
 
 ############################################################
 # Model stuff
@@ -389,13 +384,9 @@ if args.cuda:
     convex_f.cuda()
     convex_g.cuda()
 
-    features.cuda()
 elif args.mps:
     convex_f.to("mps")
     convex_g.to("mps")
-
-    features.to("mps")
-
 
 logging.info("Created and initialized the convex neural networks 'f' and 'g'")
 num_parameters = sum([parameter.nelement()
@@ -443,14 +434,13 @@ def train(epoch):
 
     g_Constraint_loss_value_epoch = 0
 
-    for batch_idx, (real_data, _, _) in enumerate(train_loader):
+    for batch_idx, (real_data, _, _, _) in enumerate(train_loader):
 
         if args.cuda:
             real_data = real_data.cuda()
         elif args.mps:
             real_data = real_data.to("mps")
 
-        real_data = features(real_data)
         real_data = Variable(real_data)
 
         indices = random.sample(range(len(Y_data)), len(real_data))
@@ -459,24 +449,12 @@ def train(epoch):
                                                batch_size=len(real_data),
                                                shuffle=True,
                                                **kwargs)
-        y, _, _ = next(iter(Y_loader))
+        y, _, _, _ = next(iter(Y_loader))
 
         if args.cuda:
             y = y.cuda()
         elif args.mps:
             y = y.to("mps")
-
-        y = features(y.float())
-
-        # sampling from kernel estimator
-        kernel_sample = list()
-        for tens in y:
-            m = torch.distributions.MultivariateNormal(tens,
-                                                       torch.eye(len(tens)))
-            sample = m.sample()
-            kernel_sample.append(sample)
-
-        y = torch.cat(kernel_sample).reshape(len(real_data), -1)
 
         y = Variable(y, requires_grad=True)
 
