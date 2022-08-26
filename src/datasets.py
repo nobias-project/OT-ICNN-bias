@@ -80,7 +80,7 @@ class CelebA_Features(data.Dataset):
                                 )
         x = torch.load(img_path)
 
-        return (x,
+        return (x.reshape(-1),
                 idx,
                 self.celeba.loc[idx, "image_id"],
                 self.celeba.loc[idx, "Male"])

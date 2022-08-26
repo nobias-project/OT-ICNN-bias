@@ -40,7 +40,7 @@ parser.add_argument('--INPUT_DIM',
 
 parser.add_argument('--BATCH_SIZE',
                     type=int,
-                    default=25,
+                    default=300,
                     help='size of the batches')
 
 parser.add_argument('--epochs',
@@ -51,17 +51,17 @@ parser.add_argument('--epochs',
 
 parser.add_argument('--N_GENERATOR_ITERS',
                     type=int,
-                    default=16,
+                    default=5,
                     help='number of training steps for discriminator per iter')
 
 parser.add_argument('--NUM_NEURON',
                     type=int,
-                    default=1024,
+                    default=512,
                     help='number of neurons per layer')
 
 parser.add_argument('--NUM_LAYERS',
                     type=int,
-                    default=3,
+                    default=5,
                     help='number of hidden layers before output')
 
 parser.add_argument('--full_quadratic',
@@ -150,7 +150,7 @@ args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 args.mps = False  # torch.backends.mps.is_available()
 
-args.lr_schedule = 2 if args.BATCH_SIZE == 60 else 4
+args.lr_schedule = 2  # if args.BATCH_SIZE == 60 else 4
 
 # Seed stuff
 torch.manual_seed(args.seed)
@@ -232,7 +232,7 @@ logging.info("Created the data loader for X\n")
 Y_data = src.datasets.CelebA_Features_Kernel(
                     "../data/celeba/celebA_female.csv",
                     "../data/resnet18",
-                    scale=1)
+                    scale=.01)
 
 ############################################################
 # Model stuff
@@ -477,9 +477,9 @@ def train(epoch):
             grad_g_of_y = torch.autograd.grad(g_of_y, y, create_graph=True)[0]
 
             f_grad_g_y = convex_f(grad_g_of_y).mean()
+            dot_prod = (grad_g_of_y * y).sum(dim=1).mean()
 
-            loss_g = f_grad_g_y\
-                - torch.dot(grad_g_of_y.reshape(-1), y.reshape(-1)) / y.size(0)
+            loss_g = f_grad_g_y - dot_prod
             g_OT_loss_val_batch += loss_g.item()
 
             if args.LAMBDA_MEAN > 0:
@@ -664,12 +664,12 @@ plt.savefig(results_save_path + '/training_loss.png')
 plt.show()
 plt.clf()
 
-plt.plot(range(10, len(total_w_2_epoch_loss_list) + 1),
-         total_w_2_epoch_loss_list[9:],
+plt.plot(range(9, len(total_w_2_epoch_loss_list) + 1),
+         total_w_2_epoch_loss_list[8:],
          label='Training loss')
 plt.xlabel('iterations')
 plt.ylabel(r'$W_2$-loss value')
-plt.savefig(results_save_path + '/training_loss10+.png')
+plt.savefig(results_save_path + '/training_loss9+.png')
 plt.show()
 
 logging.info("Training is finished and the models"
