@@ -33,6 +33,11 @@ from src.utils import *
 parser = argparse.ArgumentParser(description='PyTorch CelebA '
                                              'Beard Experiment')
 
+parser.add_argument('--FEATURES',
+                    type=str,
+                    default="facenet",
+                    help='Features extractor')
+
 parser.add_argument('--INPUT_DIM',
                     type=int,
                     default=512,
@@ -165,7 +170,7 @@ random.seed(args.seed)
 # Storing stuff
 
 if args.optimizer == 'SGD':
-    results_save_path = ('../results/Results_CelebA_ResNet18/'
+    results_save_path = ('../results/Results_CelebA_{14}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{10}_mean_{11}/optim_{8}lr_{2}momen_{7}/'
                          'gen_{9}/batch_{3}/trial_{4}_last_{12}_qudr').format(
@@ -181,10 +186,11 @@ if args.optimizer == 'SGD':
                                     args.N_GENERATOR_ITERS,
                                     args.LAMBDA_CVX,
                                     args.LAMBDA_MEAN,
-                                    'full' if args.full_quadratic else 'inp')
+                                    'full' if args.full_quadratic else 'inp',
+                                    args.FEATURES)
 
 elif args.optimizer == 'Adam':
-    results_save_path = ('../results/Results_CelebA_ResNet18/'
+    results_save_path = ('../results/Results_CelebA_{14}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{11}_mean_{12}/'
                          'optim_{9}lr_{2}betas_{7}_{8}/gen_{10}/batch_{3}/'
@@ -201,7 +207,8 @@ elif args.optimizer == 'Adam':
                                      args.N_GENERATOR_ITERS,
                                      args.LAMBDA_CVX,
                                      args.LAMBDA_MEAN,
-                                     'full' if args.full_quadratic else 'inp')
+                                     'full' if args.full_quadratic else 'inp',
+                                     args.FEATURES)
 
 model_save_path = results_save_path + '/storing_models'
 
@@ -221,7 +228,7 @@ kwargs = {'num_workers': 1, 'pin_memory': True} if (args.cuda or
 # Data stuff
 
 X_data = src.datasets.CelebA_Features("../data/celeba/celebA_female.csv",
-                                      "../data/resnet18")
+                                      "../data/{}".format(args.FEATURES))
 train_loader = torch.utils.data.DataLoader(X_data,
                                            batch_size=args.BATCH_SIZE,
                                            shuffle=True,
@@ -230,8 +237,8 @@ logging.info("Created the data loader for X\n")
 
 
 Y_data = src.datasets.CelebA_Features_Kernel(
-                    "../data/celeba/celebA_female.csv",
-                    "../data/resnet18",
+                    "../data/celeba/celebA_male.csv",
+                    "../data/{}".format(args.FEATURES),
                     scale=.01)
 
 ############################################################
@@ -674,3 +681,4 @@ plt.show()
 
 logging.info("Training is finished and the models"
              " and plots are saved. Good job :)")
+

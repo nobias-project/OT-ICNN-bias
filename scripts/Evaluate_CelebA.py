@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description='PyTorch CelebA Toy Beard '
                                              'Experiment Evaluation')
 parser.add_argument('--epoch',
                     type=int,
-                    default=30,
+                    default=17,
                     metavar='S',
                     help='epoch to be evaluated')
 
@@ -45,7 +45,7 @@ parser.add_argument('--BATCH_SIZE',
 args = parser.parse_args()
 
 args.cuda = not args.no_cuda and torch.cuda.is_available()
-args.mps = torch.backends.mps.is_available()
+args.mps = False  #torch.backends.mps.is_available()
 
 
 def save_images_as_grid(path, array_img_vectors):
@@ -68,37 +68,36 @@ def compute_optimal_transport_map(y, convex_g):
     return grad_g_of_y
 
 
-results_save_path = ('../results/Results_CelebA_ResNet18/'
-                     'input_dim_1000/init_trunc_inv_sqrt/layers_3/neuron_1024/'
-                     'lambda_cvx_0.1_mean_0.0/'
-                     'optim_Adamlr_0.001betas_0.5_0.99/'
-                     'gen_16/batch_25/trial_1_last_inp_qudr')
+results_save_path = ('../results/Results_CelebA_ResNet18/input_dim_512/init_trunc_inv_sqrt/layers_5/neuron_512/'
+                     'lambda_cvx_0.1_mean_0.0/optim_Adamlr_0.001betas_0.5_0.99/gen_5/batch_300/trial_1_last_inp_qudr')
 model_save_path = results_save_path + '/storing_models'
 
-df = pd.read_csv("../data/celeba/list_attr_celeba.csv")
+df = pd.read_csv("../data/celeba/celebA_female.csv")
 df["values_resnet18"] = [None]*len(df)
 
-features = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).eval()
-features.fc = nn.Identity()
+X_data = src.datasets.CelebA_Features("../data/celeba/celebA_female.csv",
+                                      "../data/resnet18")
 
-transform = transforms.Compose([transforms.ToTensor(),
-                                transforms.Resize(160)])
+Y_data = src.datasets.CelebA_Features_Kernel(
+                    "../data/celeba/celebA_male.csv",
+                    "../data/resnet18",
+                    scale=.01)
 
-X_data = src.datasets.CelebA("../data/celeba/list_attr_celeba.csv",
-                             "../data/celeba/Img_folder/Img",
-                             transform=transform)
 train_loader = torch.utils.data.DataLoader(X_data,
                                            batch_size=1)
 
-convex_f = Simple_Feedforward_3Layer_ICNN_LastFull_Quadratic(512,
-                                                             1024,
+Y_loader = torch.utils.data.DataLoader(Y_data,
+                                           batch_size=300)
+
+convex_f = Simple_Feedforward_5Layer_ICNN_LastFull_Quadratic(512,
+                                                             512,
                                                              "leaky_relu")
 convex_f.load_state_dict(
     torch.load(model_save_path + '/convex_f_epoch_{}.pt'.format(args.epoch)))
 convex_f = convex_f.eval()
 
-convex_g = Simple_Feedforward_3Layer_ICNN_LastFull_Quadratic(512,
-                                                             1024,
+convex_g = Simple_Feedforward_5Layer_ICNN_LastFull_Quadratic(512,
+                                                             512,
                                                              "leaky_relu")
 convex_g.load_state_dict(
     torch.load(model_save_path + '/convex_g_epoch_{}.pt'.format(args.epoch)))
@@ -111,42 +110,30 @@ elif args.mps:
     convex_f.to("mps")
     features.to("mps")
 
+sum_list = list()
+for batch, _, _, _ in Y_loader:
+    temp_sum = convex_g(batch).reshape(-1).sum().item()
+    sum_list.append(temp_sum)
 
-features_list = list()
-val_g = list()
-for imgs, ids, _ in train_loader:
+g_average = sum(sum_list)/len(Y_data)
+
+norms_list = list()
+for imgs, ids, _, _ in train_loader:
     ids = ids.item()
     if args.cuda:
         imgs = imgs.cuda()
     elif args.mps:
         imgs = imgs.to("mps")
 
-    features_vector = features(imgs)
-    
-    features_list.append(features_vector.detach().cpu().numpy())
+    norms_list.append(torch.linalg.norm(imgs.reshape(-1), 2).item()**2)
+    val = convex_f(imgs).item()
+    df.loc[ids, "values_resnet18"] = val
 
-    if df.loc[ids, "Male"] == -1:
-        val = convex_f(features_vector).item()
-        df.loc[ids, "values_resnet18"] = val
-    else:
-        val = convex_g(features_vector).item()
-        df.loc[ids, "values_resnet18"] = val
+mean_norm = sum(norms_list)/len(X_data)
+df.values_resnet18 = .5*mean_norm - df.values_resnet18
+df.values_resnet18 += g_average
 
-features_array = np.concatenate(features_list)
-np.save(results_save_path + "feature_space.npy", features_array)
-
-features_x = features_array[df["Male"] == -1]
-features_y = features_array[df["Male"] == 1]
-
-df[df["Male"] == -1].values_resnet18 = .5*(np.linalg.norm(features_x).mean())\
-    - df[df["Male"] == -1].values_resnet18
-df[df["Male"] == 1].values_resnet18 = .5*(np.linalg.norm(features_y).mean())\
-    - df[df["Male"] == 1].values_resnet18
-
-mean_val_y = df[df["Male"] == 1].values_resnet18.mean()
-df[df["Male"] == -1].values_resnet18 += mean_val_y
-
-df.to_csv("../data/celeba/list_attr_celeba.csv", index=False)
+df.to_csv("../data/celeba/celebA_female.csv", index=False)
 
 # =============================================================================
 # img_ids = df.sort_values(by="values", ascending=False)["image_id"][:36]

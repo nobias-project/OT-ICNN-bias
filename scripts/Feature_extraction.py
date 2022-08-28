@@ -6,6 +6,7 @@ import pandas as pd
 
 from torchvision import transforms
 from torchvision.models import resnet18, ResNet18_Weights
+import facenet_pytorch as facenet
 from skimage import io
 
 from src import datasets
@@ -20,7 +21,7 @@ parser.add_argument('--DATASET',
 
 parser.add_argument('--FEATURES',
                     type=str,
-                    default="resnet18",
+                    default="facenet",
                     help='Features extractor')
 
 parser.add_argument('--no-cuda',
@@ -38,10 +39,13 @@ if args.FEATURES == "resnet18":
     features = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).eval()
     features.fc = nn.Identity()
 
-    if args.cuda:
-        features.cuda()
-    elif args.mps:
-        features.to("mps")
+elif args.FEATURES == "facenet":
+    features = facenet.InceptionResnetV1(pretrained='vggface2').eval()
+
+if args.cuda:
+    features.cuda()
+elif args.mps:
+    features.to("mps")
 
 # load data
 if args.DATASET == "celeba":
@@ -52,7 +56,7 @@ if args.DATASET == "celeba":
     root_dir = "../data/celeba/Img_folder/Img"
     os.makedirs("../data/{}".format(args.FEATURES), exist_ok=True)
 
-    for i in df.index[74925:]:
+    for i in df.index:
         img_path = os.path.join(root_dir,
                                 df.loc[i, "image_id"])
 
