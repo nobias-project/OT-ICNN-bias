@@ -10,6 +10,7 @@ from __future__ import print_function
 import argparse
 import torch
 import torch.nn as nn
+import random
 from src.optimal_transport_modules.icnn_modules import *
 import facenet_pytorch as facenet
 import numpy as np
@@ -28,7 +29,7 @@ parser = argparse.ArgumentParser(description='PyTorch CelebA Toy Beard '
                                              'Experiment Evaluation')
 parser.add_argument('--epoch',
                     type=int,
-                    default=17,
+                    default=22,
                     metavar='S',
                     help='epoch to be evaluated')
 
@@ -68,26 +69,33 @@ def compute_optimal_transport_map(y, convex_g):
     return grad_g_of_y
 
 
-results_save_path = ('../results/Results_CelebA_ResNet18/input_dim_512/init_trunc_inv_sqrt/layers_5/neuron_512/'
-                     'lambda_cvx_0.1_mean_0.0/optim_Adamlr_0.001betas_0.5_0.99/gen_5/batch_300/trial_1_last_inp_qudr')
+results_save_path = ('../results/Results_CelebA_facenet/'
+                     'Results_CelebA_facenet/input_dim_512/'
+                     'init_trunc_inv_sqrt/layers_5/neuron_512/'
+                     'lambda_cvx_0.1_mean_0.0/'
+                     'optim_Adamlr_0.001betas_0.5_0.99/gen_5/batch_300/'
+                     'trial_1_last_inp_qudr')
 model_save_path = results_save_path + '/storing_models'
 
 df = pd.read_csv("../data/celeba/celebA_female.csv")
-df["values_resnet18"] = [None]*len(df)
+df["values_facenet"] = [None]*len(df)
 
 X_data = src.datasets.CelebA_Features("../data/celeba/celebA_female.csv",
-                                      "../data/resnet18")
+                                      "../data/facenet")
 
 Y_data = src.datasets.CelebA_Features_Kernel(
                     "../data/celeba/celebA_male.csv",
-                    "../data/resnet18",
+                    "../data/facenet",
                     scale=.01)
+
+indices = random.sample(range(len(Y_data)), 10000)
+Y_subset = torch.utils.data.Subset(Y_data, indices)
 
 train_loader = torch.utils.data.DataLoader(X_data,
                                            batch_size=1)
 
-Y_loader = torch.utils.data.DataLoader(Y_data,
-                                           batch_size=300)
+Y_loader = torch.utils.data.DataLoader(Y_subset,
+                                       batch_size=300)
 
 convex_f = Simple_Feedforward_5Layer_ICNN_LastFull_Quadratic(512,
                                                              512,
@@ -105,19 +113,21 @@ convex_g = convex_g.eval()
 
 if args.cuda:
     convex_f.cuda()
-    features.cuda()
+
 elif args.mps:
     convex_f.to("mps")
-    features.to("mps")
 
 sum_list = list()
+norm_list = list()
 for batch, _, _, _ in Y_loader:
     temp_sum = convex_g(batch).reshape(-1).sum().item()
+    temp_norm = torch.linalg.norm(batch, 2, dim=1).pow(2).sum().item()
     sum_list.append(temp_sum)
+    norm_list.append(temp_norm)
 
-g_average = sum(sum_list)/len(Y_data)
+g_average = sum(sum_list)/len(Y_subset)
+norm_average = sum(norm_list)/len(Y_subset)
 
-norms_list = list()
 for imgs, ids, _, _ in train_loader:
     ids = ids.item()
     if args.cuda:
@@ -125,13 +135,11 @@ for imgs, ids, _, _ in train_loader:
     elif args.mps:
         imgs = imgs.to("mps")
 
-    norms_list.append(torch.linalg.norm(imgs.reshape(-1), 2).item()**2)
+    # val = (.5*torch.linalg.norm(imgs.reshape(-1), 2)**2 -
     val = convex_f(imgs).item()
-    df.loc[ids, "values_resnet18"] = val
+    df.loc[ids, "values_facenet"] = val
 
-mean_norm = sum(norms_list)/len(X_data)
-df.values_resnet18 = .5*mean_norm - df.values_resnet18
-df.values_resnet18 += g_average
+# df.values_resnet18 += (.5*norm_average - g_average)
 
 df.to_csv("../data/celeba/celebA_female.csv", index=False)
 
