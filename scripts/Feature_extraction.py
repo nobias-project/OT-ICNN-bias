@@ -7,7 +7,8 @@ import pandas as pd
 from torchvision import transforms
 from torchvision.models import resnet18, ResNet18_Weights
 from torchvision.models import resnet50, ResNet50_Weights
-from torchvision.models.detection import fasterrcnn_mobilenet_v3_large_fpn, FasterRCNN_MobileNet_V3_Large_FPN_Weights
+from torchvision.models.detection import fasterrcnn_mobilenet_v3_large_fpn
+from torchvision.models import detection 
 import facenet_pytorch as facenet
 from skimage import io
 
@@ -23,7 +24,7 @@ parser.add_argument('--DATASET',
 
 parser.add_argument('--FEATURES',
                     type=str,
-                    default="resnet50",
+                    default="mobilenet",
                     help='Features extractor')
 
 parser.add_argument('--no-cuda',
@@ -43,10 +44,6 @@ if args.FEATURES == "resnet18":
 
 elif args.FEATURES == "resnet50":
     features = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1).eval()
-    features.fc = nn.Identity()
-
-elif args.FEATURES == "mobilenet":
-    features = fasterrcnn_mobilenet_v3_large_fpn(weights=FasterRCNN_MobileNet_V3_Large_FPN_Weights).eval()
     features.fc = nn.Identity()
 
 elif args.FEATURES == "facenet":
@@ -79,6 +76,7 @@ if args.DATASET == "celeba":
             image.to("mps")
 
         features_tensor = features(image.reshape(1, *image.shape))
+        break
         save_path = "../data/{}/{}.pt".format(args.FEATURES, df.loc[i, "image_id"][:-4])
         torch.save(features_tensor, save_path)
 
