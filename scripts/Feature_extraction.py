@@ -6,6 +6,8 @@ import pandas as pd
 
 from torchvision import transforms
 from torchvision.models import resnet18, ResNet18_Weights
+from torchvision.models import resnet50, ResNet50_Weights
+from torchvision.models.detection import fasterrcnn_mobilenet_v3_large_fpn, FasterRCNN_MobileNet_V3_Large_FPN_Weights
 import facenet_pytorch as facenet
 from skimage import io
 
@@ -21,7 +23,7 @@ parser.add_argument('--DATASET',
 
 parser.add_argument('--FEATURES',
                     type=str,
-                    default="facenet",
+                    default="resnet50",
                     help='Features extractor')
 
 parser.add_argument('--no-cuda',
@@ -37,6 +39,14 @@ args.mps = not args.no_cuda and torch.backends.mps.is_available()
 # load features extractor
 if args.FEATURES == "resnet18":
     features = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).eval()
+    features.fc = nn.Identity()
+
+elif args.FEATURES == "resnet50":
+    features = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1).eval()
+    features.fc = nn.Identity()
+
+elif args.FEATURES == "mobilenet":
+    features = fasterrcnn_mobilenet_v3_large_fpn(weights=FasterRCNN_MobileNet_V3_Large_FPN_Weights).eval()
     features.fc = nn.Identity()
 
 elif args.FEATURES == "facenet":
