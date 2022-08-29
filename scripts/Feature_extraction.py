@@ -61,7 +61,8 @@ if args.DATASET == "celeba":
 
     df = pd.read_csv("../data/celeba/list_attr_celeba.csv")
     root_dir = "../data/celeba/Img_folder/Img"
-    os.makedirs("../data/{}".format(args.FEATURES), exist_ok=True)
+    os.makedirs("../data/{}/{}".format(args.DATASET, args.FEATURES),
+                exist_ok=True)
 
     for i in df.index:
         img_path = os.path.join(root_dir,
@@ -77,8 +78,40 @@ if args.DATASET == "celeba":
 
         features_tensor = features(image.reshape(1, *image.shape))
         break
-        save_path = "../data/{}/{}.pt".format(args.FEATURES, df.loc[i, "image_id"][:-4])
+        save_path = "../data/{}/{}/{}.pt".format(args.DATASET,
+                                                 args.FEATURES,
+                                                 df.loc[i, "image_id"][:-4])
         torch.save(features_tensor, save_path)
 
 
-
+if args.DATASET == "caltech101":
+    transform = transforms.Compose([transforms.ToTensor(),
+                                    transforms.Resize(160)])
+# =============================================================================
+# 
+#     df = pd.read_csv("../data/celeba/list_attr_celeba.csv")
+#     root_dir = "../data/celeba/Img_folder/Img"
+#     os.makedirs("../data/{}/{}".format(args.DATASET, args.FEATURES),
+#                 exist_ok=True)
+# 
+#     for i in df.index:
+#         img_path = os.path.join(root_dir,
+#                                 df.loc[i, "image_id"])
+# 
+#         image = io.imread(img_path)
+#         image = transform(image)
+# 
+#         if args.cuda:
+#             image.cuda()
+#         elif args.mps:
+#             image.to("mps")
+# 
+#         features_tensor = features(image.reshape(1, *image.shape))
+#         break
+#         save_path = "../data/{}/{}/{}.pt".format(args.DATASET,
+#                                                  args.FEATURES,
+#                                                  df.loc[i, "image_id"][:-4])
+#         torch.save(features_tensor, save_path)
+# 
+# 
+# =============================================================================
