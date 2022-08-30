@@ -11,7 +11,7 @@ from torchvision.models.detection import fasterrcnn_mobilenet_v3_large_fpn
 from torchvision.models import detection 
 import facenet_pytorch as facenet
 from skimage import io
-
+from PIL import Image
 from src import datasets
 
 # Argument parsing
@@ -19,12 +19,12 @@ parser = argparse.ArgumentParser(description='Features Extraction')
 
 parser.add_argument('--DATASET',
                     type=str,
-                    default="celeba",
+                    default="oxford-iiit-pet",
                     help='dataset to extract the features from')
 
 parser.add_argument('--FEATURES',
                     type=str,
-                    default="mobilenet",
+                    default="resnet50",
                     help='Features extractor')
 
 parser.add_argument('--no-cuda',
@@ -84,9 +84,35 @@ if args.DATASET == "celeba":
         torch.save(features_tensor, save_path)
 
 
-if args.DATASET == "caltech101":
-    transform = transforms.Compose([transforms.ToTensor(),
-                                    transforms.Resize(160)])
+if args.DATASET == "oxford-iiit-pet":
+    transform = transforms.Compose([transforms.ToTensor()])
+                                    # transforms.Resize(160)])
+    root_dir = "../data/oxford-iiit-pet/images"
+    os.makedirs("../data/{}/{}".format(args.DATASET, args.FEATURES),
+                exist_ok=True)
+
+    images = os.listdir(root_dir)
+    for name in images:
+        if name[-4:] != ".mat":
+            img_path = os.path.join(root_dir,
+                                    name)
+
+            image = Image.open(img_path)
+            image = image.convert("RGB")
+            image = transform(image)
+
+            if args.cuda:
+                image.cuda()
+            elif args.mps:
+                image.to("mps")
+
+            features_tensor = features(image.reshape(1, *image.shape))
+            save_path = "../data/{}/{}/{}.pt".format(args.DATASET,
+                                                     args.FEATURES,
+                                                     name[:-4])
+            torch.save(features_tensor, save_path)
+    
+    
 # =============================================================================
 # 
 #     df = pd.read_csv("../data/celeba/list_attr_celeba.csv")
