@@ -165,7 +165,9 @@ class Pet_Features(data.Dataset):
 
         x = torch.load(img_path)
 
-        return (x.reshape(-1).detach(), is_cat(self.list[idx]))
+        return (x.reshape(-1).detach(),
+                is_cat(self.list[idx]),
+                self.list[idx])
 
 
 class Pet_Features_Kernel(data.Dataset):
@@ -217,4 +219,6 @@ class Pet_Features_Kernel(data.Dataset):
                                         self.scale*torch.eye(x.shape[1]))
         sample = m.sample()
 
-        return (sample.reshape(-1).detach(), is_cat(self.list[idx]))
+        return (sample.reshape(-1).detach(),
+                is_cat(self.list[idx]),
+                self.list[idx])

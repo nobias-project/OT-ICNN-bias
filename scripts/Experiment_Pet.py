@@ -443,7 +443,7 @@ def train(epoch):
 
     g_Constraint_loss_value_epoch = 0
 
-    for batch_idx, (real_data, _) in enumerate(train_loader):
+    for batch_idx, (real_data, _, _) in enumerate(train_loader):
 
         if args.cuda:
             real_data = real_data.cuda()
@@ -458,7 +458,7 @@ def train(epoch):
                                                batch_size=len(real_data),
                                                shuffle=True,
                                                **kwargs)
-        y, _ = next(iter(Y_loader))
+        y, _, _ = next(iter(Y_loader))
 
         if args.cuda:
             y = y.cuda()
