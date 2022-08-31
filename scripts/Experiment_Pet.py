@@ -44,7 +44,7 @@ parser.add_argument('--INPUT_DIM',
 
 parser.add_argument('--BATCH_SIZE',
                     type=int,
-                    default=30,
+                    default=100,
                     help='size of the batches')
 
 parser.add_argument('--epochs',
@@ -239,8 +239,8 @@ logging.info("Created the data loader for X\n")
 
 Y_data = src.datasets.Pet_Features_Kernel(
     "../data/oxford-iiit-pet/{}".format(args.FEATURES),
-    cats=0,
-    scale=.001)
+    cats=1,
+    scale=.0001)
 
 
 ############################################################

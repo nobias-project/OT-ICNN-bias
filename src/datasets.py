@@ -114,8 +114,9 @@ class CelebA_Features_Kernel(data.Dataset):
                                 )
         x = torch.load(img_path)
 
-        m = torch.distributions.MultivariateNormal(x.reshape(-1),
-                                                   torch.eye(x.shape[1]))
+        m = torch.distributions.MultivariateNormal(
+                                        x.reshape(-1),
+                                        self.scale*torch.eye(x.shape[1]))
         sample = m.sample()
 
         return (sample,
@@ -211,8 +212,9 @@ class Pet_Features_Kernel(data.Dataset):
 
         x = torch.load(img_path)
 
-        m = torch.distributions.MultivariateNormal(x.reshape(-1),
-                                                   torch.eye(x.shape[1]))
+        m = torch.distributions.MultivariateNormal(
+                                        x.reshape(-1),
+                                        self.scale*torch.eye(x.shape[1]))
         sample = m.sample()
 
         return (sample.reshape(-1).detach(), is_cat(self.list[idx]))
