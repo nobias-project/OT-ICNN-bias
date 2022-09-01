@@ -34,12 +34,12 @@ parser = argparse.ArgumentParser(description='PyTorch Oxford Pet Experiment')
 
 parser.add_argument('--FEATURES',
                     type=str,
-                    default="resnet50",
+                    default="resnet18",
                     help='Features extractor')
 
 parser.add_argument('--INPUT_DIM',
                     type=int,
-                    default=2048,
+                    default=512,
                     help='dimensionality of the input x')
 
 parser.add_argument('--BATCH_SIZE',
@@ -683,3 +683,60 @@ plt.show()
 
 logging.info("Training is finished and the models"
              " and plots are saved. Good job :)")
+
+
+
+train_loader = torch.utils.data.DataLoader(X_data,
+                                           batch_size=1)
+
+Y_loader = torch.utils.data.DataLoader(Y_data,
+                                       batch_size=1)
+ot_loss_list = list()
+sum_list = list()
+norm_list = list()
+for batch, _, _ in Y_loader:
+    temp_sum = convex_g(batch).reshape(-1).sum().item()
+    temp_norm = torch.linalg.norm(batch, 2, dim=1).pow(2).sum().item()
+
+    batch.requires_grad = True
+
+    g_of_y = convex_g(batch).sum()
+
+    grad_g_of_y = torch.autograd.grad(g_of_y, batch, create_graph=True)[0]
+
+    f_grad_g_y = convex_f(grad_g_of_y).mean()
+    dot_prod = (grad_g_of_y * batch).sum(dim=1).mean()
+
+    loss_g = f_grad_g_y - dot_prod
+
+    ot_loss_list.append(loss_g.item())
+    sum_list.append(temp_sum)
+    norm_list.append(temp_norm)
+
+ot_loss_average = sum(ot_loss_list)/len(Y_data)
+g_average = sum(sum_list)/len(Y_data)
+norm_average = sum(norm_list)/len(Y_data)
+
+path_csv = ("../results/Results_Pet_resnet18/"
+            "convex_f_{}_results.csv".format(40))
+
+with open(path_csv, "w") as file:
+    file.write("name,value_g_avg,value_ot_loss\n")
+    for imgs, _, name in train_loader:
+
+        if args.cuda:
+            imgs = imgs.cuda()
+        elif args.mps:
+            imgs = imgs.to("mps")
+
+        norm_square = (torch.linalg.norm(imgs.reshape(-1), 2).item())**2
+
+        val = .5*norm_square - convex_f(imgs).item()
+
+        val1 = val + (.5*norm_average - ot_loss_average)
+
+        val += (.5*norm_average - g_average)
+
+        line = name[0] + "," + str(val) + "," + str(val1) + "\n"
+
+        file.write(line)

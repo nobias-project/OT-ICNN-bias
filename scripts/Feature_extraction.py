@@ -24,7 +24,7 @@ parser.add_argument('--DATASET',
 
 parser.add_argument('--FEATURES',
                     type=str,
-                    default="resnet50",
+                    default="resnet18",
                     help='Features extractor')
 
 parser.add_argument('--no-cuda',
