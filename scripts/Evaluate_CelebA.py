@@ -135,8 +135,8 @@ for imgs, ids, _, _ in train_loader:
     elif args.mps:
         imgs = imgs.to("mps")
 
-    # val = (.5*torch.linalg.norm(imgs.reshape(-1), 2)**2 -
-    val = convex_f(imgs).item()
+    val = (.5*torch.linalg.norm(imgs.reshape(-1), 2)**2 -
+           convex_f(imgs)).item()
     df.loc[ids, "values_facenet"] = val
 
 # df.values_resnet18 += (.5*norm_average - g_average)

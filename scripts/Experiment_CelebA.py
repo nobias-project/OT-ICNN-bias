@@ -50,7 +50,7 @@ parser.add_argument('--BATCH_SIZE',
 
 parser.add_argument('--epochs',
                     type=int,
-                    default=40,
+                    default=15,
                     metavar='S',
                     help='number_of_epochs')
 
@@ -112,7 +112,7 @@ parser.add_argument('--beta2', type=float, default=0.99)
 # Less frequently used training settings
 parser.add_argument('--LAMBDA_CVX',
                     type=float,
-                    default=0.1,
+                    default=0.5,
                     help='Regularization constant for '
                     'positive weight constraints')
 parser.add_argument('--LAMBDA_MEAN',
@@ -239,7 +239,7 @@ logging.info("Created the data loader for X\n")
 Y_data = src.datasets.CelebA_Features_Kernel(
                     "../data/celeba/celebA_male.csv",
                     "../data/{}".format(args.FEATURES),
-                    scale=.01)
+                    scale=.001)
 
 ############################################################
 # Model stuff
@@ -682,3 +682,36 @@ plt.show()
 logging.info("Training is finished and the models"
              " and plots are saved. Good job :)")
 
+train_loader = torch.utils.data.DataLoader(X_data,
+                                           batch_size=1)
+
+Y_loader = torch.utils.data.DataLoader(Y_data,
+                                       batch_size=300)
+
+df = pd.read_csv("../data/celeba/celebA_female.csv")
+df["values_facenet"] = [None]*len(df)
+
+sum_list = list()
+norm_list = list()
+for batch, _, _, _ in Y_loader:
+    temp_sum = convex_g(batch).reshape(-1).sum().item()
+    temp_norm = torch.linalg.norm(batch, 2, dim=1).pow(2).sum().item()
+    sum_list.append(temp_sum)
+    norm_list.append(temp_norm)
+
+g_average = sum(sum_list)/len(Y_data)
+norm_average = sum(norm_list)/len(Y_data)
+
+for imgs, ids, _, _ in train_loader:
+    ids = ids.item()
+    if args.cuda:
+        imgs = imgs.cuda()
+    elif args.mps:
+        imgs = imgs.to("mps")
+
+    val = (.5*torch.linalg.norm(imgs.reshape(-1), 2)**2 -
+           convex_f(imgs)).item()
+    val += .5*norm_average - g_average
+    df.loc[ids, "values_facenet"] = val
+
+df.to_csv("../data/celeba/celebA_female.csv", index=False)

@@ -100,6 +100,7 @@ class CelebA_Features_Kernel(data.Dataset):
         self.celeba = pd.read_csv(csv_file)
 
         self.root_dir = root_dir
+        self.scale = scale
 
     def __len__(self):
         return len(self.celeba)
