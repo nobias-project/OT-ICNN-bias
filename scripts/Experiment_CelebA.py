@@ -50,7 +50,7 @@ parser.add_argument('--BATCH_SIZE',
 
 parser.add_argument('--epochs',
                     type=int,
-                    default=15,
+                    default=2,
                     metavar='S',
                     help='number_of_epochs')
 
@@ -86,7 +86,7 @@ parser.add_argument('--initialization',
 
 parser.add_argument('--TRIAL',
                     type=int,
-                    default=1,
+                    default=2,
                     help='the trail no.')
 
 parser.add_argument('--optimizer',
@@ -694,6 +694,12 @@ df["values_facenet"] = [None]*len(df)
 sum_list = list()
 norm_list = list()
 for batch, _, _, _ in Y_loader:
+
+    if args.cuda:
+        batch = batch.cuda()
+    elif args.mps:
+        batch = batch.to("mps")
+
     temp_sum = convex_g(batch).reshape(-1).sum().item()
     temp_norm = torch.linalg.norm(batch, 2, dim=1).pow(2).sum().item()
     sum_list.append(temp_sum)

@@ -80,7 +80,7 @@ class CelebA_Features(data.Dataset):
                                 )
         x = torch.load(img_path)
 
-        return (x.reshape(-1),
+        return (x.reshape(-1).detach(),
                 idx,
                 self.celeba.loc[idx, "image_id"],
                 self.celeba.loc[idx, "Male"])
@@ -120,7 +120,7 @@ class CelebA_Features_Kernel(data.Dataset):
                                         self.scale*torch.eye(x.shape[1]))
         sample = m.sample()
 
-        return (sample,
+        return (sample.detach(),
                 idx,
                 self.celeba.loc[idx, "image_id"],
                 self.celeba.loc[idx, "Male"])

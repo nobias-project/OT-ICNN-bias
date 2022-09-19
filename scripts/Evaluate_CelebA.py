@@ -29,7 +29,7 @@ parser = argparse.ArgumentParser(description='PyTorch CelebA Toy Beard '
                                              'Experiment Evaluation')
 parser.add_argument('--epoch',
                     type=int,
-                    default=22,
+                    default=2,
                     metavar='S',
                     help='epoch to be evaluated')
 
@@ -69,12 +69,12 @@ def compute_optimal_transport_map(y, convex_g):
     return grad_g_of_y
 
 
-results_save_path = ('../results/Results_CelebA_facenet/'
+results_save_path = ('../results/'
                      'Results_CelebA_facenet/input_dim_512/'
                      'init_trunc_inv_sqrt/layers_5/neuron_512/'
-                     'lambda_cvx_0.1_mean_0.0/'
+                     'lambda_cvx_0.5_mean_0.0/'
                      'optim_Adamlr_0.001betas_0.5_0.99/gen_5/batch_300/'
-                     'trial_1_last_inp_qudr')
+                     'trial_2_last_inp_qudr')
 model_save_path = results_save_path + '/storing_models'
 
 df = pd.read_csv("../data/celeba/celebA_female.csv")
@@ -97,14 +97,14 @@ train_loader = torch.utils.data.DataLoader(X_data,
 Y_loader = torch.utils.data.DataLoader(Y_subset,
                                        batch_size=300)
 
-convex_f = Simple_Feedforward_5Layer_ICNN_LastFull_Quadratic(512,
+convex_f = Simple_Feedforward_5Layer_ICNN_LastInp_Quadratic(512,
                                                              512,
                                                              "leaky_relu")
 convex_f.load_state_dict(
     torch.load(model_save_path + '/convex_f_epoch_{}.pt'.format(args.epoch)))
-convex_f = convex_f.eval()
+convex_f.eval()
 
-convex_g = Simple_Feedforward_5Layer_ICNN_LastFull_Quadratic(512,
+convex_g = Simple_Feedforward_5Layer_ICNN_LastInp_Quadratic(512,
                                                              512,
                                                              "leaky_relu")
 convex_g.load_state_dict(
