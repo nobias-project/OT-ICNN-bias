@@ -77,7 +77,6 @@ if args.DATASET == "celeba":
             image.to("mps")
 
         features_tensor = features(image.reshape(1, *image.shape))
-        break
         save_path = "../data/{}/{}/{}.pt".format(args.DATASET,
                                                  args.FEATURES,
                                                  df.loc[i, "image_id"][:-4])
