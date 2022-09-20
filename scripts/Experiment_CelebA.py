@@ -4,23 +4,17 @@ import argparse
 import torch
 import torch.optim as optim
 import random
-import facenet_pytorch as facenet
 import numpy as np
 import pandas as pd
 import os
 import logging
 import torch.utils.data
-import matplotlib
 
 import src.datasets
 import src.optimal_transport_modules
 
-from torchvision import transforms
-from torchvision.models import resnet18, ResNet18_Weights
 from torch.autograd import Variable
-from torchvision.utils import make_grid
 from matplotlib import pyplot as plt
-from PIL import Image
 from scipy.stats import truncnorm
 
 from src.optimal_transport_modules.icnn_modules import *
@@ -31,26 +25,38 @@ from src.utils import *
 
 # Training settings. Important ones first
 parser = argparse.ArgumentParser(description='PyTorch CelebA '
-                                             'Beard Experiment')
+                                             'Experiment1')
+
+parser.add_argument('--DATASET_MALE',
+                    type=str,
+                    default=("../data/celeba/"
+                             "experiment1_Male_Wearing_Hat_10%.csv"),
+                    help='Male data')
+
+parser.add_argument('--DATASET_FEMALE',
+                    type=str,
+                    default=("../data/celeba/"
+                             "experiment1_Female_Wearing_Hat_30%.csv"),
+                    help='Female data')
 
 parser.add_argument('--FEATURES',
                     type=str,
-                    default="facenet",
+                    default="resnet18",
                     help='Features extractor')
 
 parser.add_argument('--INPUT_DIM',
                     type=int,
-                    default=512,
+                    default=256,
                     help='dimensionality of the input x')
 
 parser.add_argument('--BATCH_SIZE',
                     type=int,
-                    default=300,
+                    default=30,
                     help='size of the batches')
 
 parser.add_argument('--epochs',
                     type=int,
-                    default=2,
+                    default=40,
                     metavar='S',
                     help='number_of_epochs')
 
@@ -66,7 +72,7 @@ parser.add_argument('--NUM_NEURON',
 
 parser.add_argument('--NUM_LAYERS',
                     type=int,
-                    default=5,
+                    default=4,
                     help='number of hidden layers before output')
 
 parser.add_argument('--full_quadratic',
@@ -86,7 +92,7 @@ parser.add_argument('--initialization',
 
 parser.add_argument('--TRIAL',
                     type=int,
-                    default=2,
+                    default=1,
                     help='the trail no.')
 
 parser.add_argument('--optimizer',
@@ -112,7 +118,7 @@ parser.add_argument('--beta2', type=float, default=0.99)
 # Less frequently used training settings
 parser.add_argument('--LAMBDA_CVX',
                     type=float,
-                    default=0.5,
+                    default=0.1,
                     help='Regularization constant for '
                     'positive weight constraints')
 parser.add_argument('--LAMBDA_MEAN',
@@ -170,7 +176,8 @@ random.seed(args.seed)
 # Storing stuff
 
 if args.optimizer == 'SGD':
-    results_save_path = ('../results/Results_CelebA_{14}/'
+    results_save_path = ('../results/Experiment1/Wearing_Hat/30/'
+                         'Results_CelebA_{14}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{10}_mean_{11}/optim_{8}lr_{2}momen_{7}/'
                          'gen_{9}/batch_{3}/trial_{4}_last_{12}_qudr').format(
@@ -190,7 +197,8 @@ if args.optimizer == 'SGD':
                                     args.FEATURES)
 
 elif args.optimizer == 'Adam':
-    results_save_path = ('../results/Results_CelebA_{14}/'
+    results_save_path = ('../results/Experiment1/Wearing_Hat/30/'
+                         'Results_CelebA_{14}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{11}_mean_{12}/'
                          'optim_{9}lr_{2}betas_{7}_{8}/gen_{10}/batch_{3}/'
@@ -217,7 +225,6 @@ os.makedirs(model_save_path, exist_ok=True)
 setup_logging(os.path.join(results_save_path, 'log.txt'))
 results_file = os.path.join(results_save_path, 'results.%s')
 results = ResultsLog(results_file % 'csv', results_file % 'html')
-
 logging.info("saving to %s \n", results_save_path)
 logging.debug("run arguments: %s", args)
 
@@ -227,8 +234,9 @@ kwargs = {'num_workers': 1, 'pin_memory': True} if (args.cuda or
 ################################################################
 # Data stuff
 
-X_data = src.datasets.CelebA_Features("../data/celeba/celebA_female.csv",
-                                      "../data/{}".format(args.FEATURES))
+X_data = src.datasets.CelebA_Features(
+                                args.DATASET_FEMALE,
+                                "../data//celeba/{}".format(args.FEATURES))
 train_loader = torch.utils.data.DataLoader(X_data,
                                            batch_size=args.BATCH_SIZE,
                                            shuffle=True,
@@ -237,8 +245,8 @@ logging.info("Created the data loader for X\n")
 
 
 Y_data = src.datasets.CelebA_Features_Kernel(
-                    "../data/celeba/celebA_male.csv",
-                    "../data/{}".format(args.FEATURES),
+                    args.DATASET_MALE,
+                    "../data/celeba/{}".format(args.FEATURES),
                     scale=.001)
 
 ############################################################
@@ -576,57 +584,13 @@ def train(epoch):
             g_OT_loss_value_epoch,
             g_Constraint_loss_value_epoch)
 
-
-def test():
-    model.eval()
-    test_loss = 0
-    correct = 0
-    for data, target in test_loader:
-        if args.cuda:
-            data, target = data.cuda(), target.cuda()
-        if args.mps:
-            data, target = data.to("mps"), target.to("mps")
-        data, target = Variable(data, volatile=True), Variable(target)
-        output = model(data)
-        # sum up batch loss
-        test_loss += criterion(output, target).item() 
-        # get the index of the max log-probability
-        pred = output.data.max(1, keepdim=True)[1]
-        correct += pred.eq(target.data.view_as(pred)).cpu().sum()
-
-    test_loss /= len(test_loader.dataset)
-    print(('\nTest set: Average loss: {:.4f},'
-           ' Accuracy: {}/{} ({:.0f}%)\n').format(
-                                   test_loss,
-                                   correct,
-                                   len(test_loader.dataset),
-                                   100. * correct / len(test_loader.dataset)))
-
-
-def save_images_as_grid(array_img_vectors, epoch):
-
-    # array_img_vectors is of size (N, PCA_components).
-    # So obtain the images first using inverse PCA transform
-
-    array_img_vectors = torch.from_numpy(
-        estimator.inverse_transform(
-            array_img_vectors.data.cpu().numpy())).float()
-
-    array_img_vectors = array_img_vectors.reshape(-1, 1, 28, 28)
-    grid = make_grid(array_img_vectors, nrow=4, normalize=True)
-    ndarr = grid.mul_(255).add_(0.5)\
-        .clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
-    im = Image.fromarray(ndarr)
-    im.save(results_save_path+'grids/epoch_{0}.png'.format(epoch))
-
-
 ###################################################
 # Training stuff
+
+
 total_w_2_epoch_loss_list = []
 total_g_OT_epoch_loss_list = []
 total_g_Constraint_epoch_loss_list = []
-
-df = pd.read_csv("../data/celeba/celebA_sample_male.csv")
 
 for epoch in range(1, args.epochs + 1):
 
@@ -681,43 +645,3 @@ plt.show()
 
 logging.info("Training is finished and the models"
              " and plots are saved. Good job :)")
-
-train_loader = torch.utils.data.DataLoader(X_data,
-                                           batch_size=1)
-
-Y_loader = torch.utils.data.DataLoader(Y_data,
-                                       batch_size=300)
-
-df = pd.read_csv("../data/celeba/celebA_female.csv")
-df["values_facenet"] = [None]*len(df)
-
-sum_list = list()
-norm_list = list()
-for batch, _, _, _ in Y_loader:
-
-    if args.cuda:
-        batch = batch.cuda()
-    elif args.mps:
-        batch = batch.to("mps")
-
-    temp_sum = convex_g(batch).reshape(-1).sum().item()
-    temp_norm = torch.linalg.norm(batch, 2, dim=1).pow(2).sum().item()
-    sum_list.append(temp_sum)
-    norm_list.append(temp_norm)
-
-g_average = sum(sum_list)/len(Y_data)
-norm_average = sum(norm_list)/len(Y_data)
-
-for imgs, ids, _, _ in train_loader:
-    ids = ids.item()
-    if args.cuda:
-        imgs = imgs.cuda()
-    elif args.mps:
-        imgs = imgs.to("mps")
-
-    val = (.5*torch.linalg.norm(imgs.reshape(-1), 2)**2 -
-           convex_f(imgs)).item()
-    val += .5*norm_average - g_average
-    df.loc[ids, "values_facenet"] = val
-
-df.to_csv("../data/celeba/celebA_female.csv", index=False)

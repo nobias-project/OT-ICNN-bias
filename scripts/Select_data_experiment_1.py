@@ -33,18 +33,29 @@ def select_data(df,
 
     for percentage in [.9, .6, .3, .1]:
 
-        to_concat = [df_no_f1_f2.sample(round(percentage*len_no_f1_f2)),
-                     df_no_f1_no_f2.sample(round((1-percentage)*len_no_f1_f2)),
-                     df_f1_no_f2.sample(round(.9*len_no_f1_f2)),
-                     df_f1_f2.sample(round(.1*len_no_f1_f2))]
+        to_concat_female = [
+            df_no_f1_f2.sample(round(percentage*len_no_f1_f2)),
+            df_no_f1_no_f2.sample(round((1-percentage)*len_no_f1_f2))
+            ]
 
-        final = pd.concat(to_concat)
+        final_female = pd.concat(to_concat_female)
 
         path = "../data/celeba/experiment1_Female_{}_{}%.csv".format(
                                                             feature2,
                                                             int(percentage*100)
                                                             )
-        final.to_csv(path)
+        final_female.to_csv(path)
+
+    to_concat_male = [df_f1_no_f2.sample(round(.9*len_no_f1_f2)),
+                      df_f1_f2.sample(round(.1*len_no_f1_f2))]
+
+    final_male = pd.concat(to_concat_male)
+
+    path = "../data/celeba/experiment1_Male_{}_{}%.csv".format(
+                                                        feature2,
+                                                        10
+                                                        )
+    final_male.to_csv(path)
 
 
 # path to CelebA attributes' .csv

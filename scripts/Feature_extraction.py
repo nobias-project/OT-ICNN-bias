@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(description='Features Extraction')
 
 parser.add_argument('--DATASET',
                     type=str,
-                    default="oxford-iiit-pet",
+                    default="celeba",
                     help='dataset to extract the features from')
 
 parser.add_argument('--FEATURES',
@@ -41,10 +41,12 @@ args.mps = not args.no_cuda and torch.backends.mps.is_available()
 if args.FEATURES == "resnet18":
     features = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).eval()
     features.fc = nn.Identity()
+    features.layer4 = nn.Identity()
 
 elif args.FEATURES == "resnet50":
     features = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1).eval()
     features.fc = nn.Identity()
+    features.layer4 = nn.Identity()
 
 elif args.FEATURES == "facenet":
     features = facenet.InceptionResnetV1(pretrained='vggface2').eval()
