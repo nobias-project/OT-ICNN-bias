@@ -12,53 +12,219 @@ import torch
 import torch.nn as nn
 import random
 from src.optimal_transport_modules.icnn_modules import *
-import facenet_pytorch as facenet
 import numpy as np
 import pandas as pd
-import skimage
 import torch.utils.data
 import src.datasets
 from src.utils import *
-from torchvision import transforms
-from torchvision.utils import make_grid
 from PIL import Image
-from sklearn.cluster import KMeans
-from torchvision.models import resnet18, ResNet18_Weights
 
-parser = argparse.ArgumentParser(description='PyTorch CelebA Toy Beard '
-                                             'Experiment Evaluation')
+
+parser = argparse.ArgumentParser(description='Experiment1 Evaluation')
+
+parser.add_argument('--DATASET_Y',
+                    type=str,
+                    default=("../data/celeba/"
+                             "experiment1_Female_Eyeglasses.csv"),
+                    help='X data')
+
+parser.add_argument('--DATASET_X',
+                    type=str,
+                    default=("../data/celeba/"
+                             "experiment1_Male_Eyeglasses_90%.csv"),
+                    help='Y data')
+
+parser.add_argument('--FEATURES',
+                    type=str,
+                    default="resnet18",
+                    help='Features extractor')
+
+parser.add_argument('--INPUT_DIM',
+                    type=int,
+                    default=512,
+                    help='dimensionality of the input x')
+
+parser.add_argument('--BATCH_SIZE',
+                    type=int,
+                    default=30,
+                    help='size of the batches')
+
 parser.add_argument('--epoch',
                     type=int,
-                    default=2,
+                    default=30,
                     metavar='S',
-                    help='epoch to be evaluated')
+                    help='number_of_epochs')
+
+parser.add_argument('--N_GENERATOR_ITERS',
+                    type=int,
+                    default=5,
+                    help='number of training steps for discriminator per iter')
+
+parser.add_argument('--NUM_NEURON',
+                    type=int,
+                    default=512,
+                    help='number of neurons per layer')
+
+parser.add_argument('--NUM_LAYERS',
+                    type=int,
+                    default=4,
+                    help='number of hidden layers before output')
+
+parser.add_argument('--full_quadratic',
+                    type=bool,
+                    default=False,
+                    help='if the last layer is full quadratic or not')
+
+parser.add_argument('--activation',
+                    type=str,
+                    default='leaky_relu',
+                    help='which activation to use for')
+
+parser.add_argument('--initialization',
+                    type=str,
+                    default='trunc_inv_sqrt',
+                    help='which initialization to use for')
+
+parser.add_argument('--TRIAL',
+                    type=int,
+                    default=1,
+                    help='the trail no.')
+
+parser.add_argument('--optimizer',
+                    type=str,
+                    default='Adam',
+                    help='which optimizer to use')
+
+parser.add_argument('--LR',
+                    type=float,
+                    default=1e-3,
+                    help='learning rate')
+
+parser.add_argument('--momentum',
+                    type=float,
+                    default=0.0,
+                    metavar='M',
+                    help='SGD momentum (default: 0.5)')
+
+parser.add_argument('--beta1', type=float, default=0.5)
+parser.add_argument('--beta2', type=float, default=0.99)
+
+
+# Less frequently used training settings
+parser.add_argument('--LAMBDA_CVX',
+                    type=float,
+                    default=0.1,
+                    help='Regularization constant for '
+                    'positive weight constraints')
+parser.add_argument('--LAMBDA_MEAN',
+                    type=float,
+                    default=0.0,
+                    help='Regularization constant for '
+                    'matching mean and covariance')
+
+parser.add_argument('--log-interval',
+                    type=int,
+                    default=10,
+                    metavar='N',
+                    help='how many batches to wait '
+                    'before logging training status')
+
+parser.add_argument('--seed', type=int, default=1, metavar='S',
+                    help='random seed (default: 1)')
+
+parser.add_argument('--N_PLOT',
+                    type=int,
+                    default=16,
+                    help='number of samples for plotting')
+
+parser.add_argument('--SCALE',
+                    type=float,
+                    default=10.0,
+                    help='scale for the gaussian_mixtures')
+parser.add_argument('--VARIANCE',
+                    type=float,
+                    default=0.5,
+                    help='variance for each mixture')
 
 parser.add_argument('--no-cuda',
                     action='store_true',
                     default=False,
-                    help='disables CUDA')
+                    help='disables CUDA training')
 
-parser.add_argument('--BATCH_SIZE',
-                    type=int,
-                    default=10,
-                    help='size of the batches')
+args = parser.parse_args()
+
+args.cuda = not args.no_cuda and torch.cuda.is_available()
+args.mps = False  # torch.backends.mps.is_available()
+
+args.lr_schedule = 2  # if args.BATCH_SIZE == 60 else 4
+
+# Seed stuff
+torch.manual_seed(args.seed)
+
+if args.cuda:
+    torch.cuda.manual_seed(args.seed)
+# understand how to set the seed for mps
+
+np.random.seed(args.seed)
+random.seed(args.seed)
+
+# Storing stuff
+attribute = args.DATASET_X.split("_")[-2]
+percentage = args.DATASET_X[-7:-5]
+
+if args.optimizer == 'SGD':
+    results_save_path = ('../results/Experiment1/{15}/{16}/'
+                         'Results_CelebA_{14}/'
+                         'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
+                         'lambda_cvx_{10}_mean_{11}/optim_{8}lr_{2}momen_{7}/'
+                         'gen_{9}/batch_{3}/trial_{4}_last_{12}_qudr').format(
+                                    args.NUM_LAYERS,
+                                    args.NUM_NEURON,
+                                    args.LR,
+                                    args.BATCH_SIZE,
+                                    args.TRIAL,
+                                    args.INPUT_DIM,
+                                    args.initialization,
+                                    args.momentum,
+                                    'SGD',
+                                    args.N_GENERATOR_ITERS,
+                                    args.LAMBDA_CVX,
+                                    args.LAMBDA_MEAN,
+                                    'full' if args.full_quadratic else 'inp',
+                                    args.FEATURES,
+                                    attribute,
+                                    percentage)
+
+elif args.optimizer == 'Adam':
+    results_save_path = ('../results/Experiment1/{15}/{16}/'
+                         'Results_CelebA_{14}/'
+                         'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
+                         'lambda_cvx_{11}_mean_{12}/'
+                         'optim_{9}lr_{2}betas_{7}_{8}/gen_{10}/batch_{3}/'
+                         'trial_{4}_last_{13}_qudr').format(
+                                     args.NUM_LAYERS,
+                                     args.NUM_NEURON,
+                                     args.LR, args.BATCH_SIZE,
+                                     args.TRIAL,
+                                     args.INPUT_DIM,
+                                     args.initialization,
+                                     args.beta1,
+                                     args.beta2,
+                                     'Adam',
+                                     args.N_GENERATOR_ITERS,
+                                     args.LAMBDA_CVX,
+                                     args.LAMBDA_MEAN,
+                                     'full' if args.full_quadratic else 'inp',
+                                     args.FEATURES,
+                                     attribute,
+                                     percentage)
+
+model_save_path = results_save_path + '/storing_models'
 
 args = parser.parse_args()
 
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 args.mps = False  #torch.backends.mps.is_available()
-
-
-def save_images_as_grid(path, array_img_vectors):
-
-    array_img_vectors = torch.from_numpy(array_img_vectors)\
-        .float().permute(0, 3, 1, 2)
-    grid = make_grid(array_img_vectors, nrow=6, normalize=True)*255
-    ndarr = grid.to('cpu', torch.uint8).numpy().T
-    im = Image.fromarray(ndarr.transpose(1, 0, 2))
-
-    im.save(path)
-
 
 def compute_optimal_transport_map(y, convex_g):
 
@@ -69,65 +235,82 @@ def compute_optimal_transport_map(y, convex_g):
     return grad_g_of_y
 
 
-results_save_path = ('../results/'
-                     'Results_CelebA_facenet/input_dim_512/'
-                     'init_trunc_inv_sqrt/layers_5/neuron_512/'
-                     'lambda_cvx_0.5_mean_0.0/'
-                     'optim_Adamlr_0.001betas_0.5_0.99/gen_5/batch_300/'
-                     'trial_2_last_inp_qudr')
-model_save_path = results_save_path + '/storing_models'
+df = pd.read_csv(args.DATASET_X)
+df["values_{}".format(args.FEATURES)] = [None]*len(df)
 
-df = pd.read_csv("../data/celeba/celebA_female.csv")
-df["values_facenet"] = [None]*len(df)
+X_data = src.datasets.CelebA_Features(
+                                args.DATASET_X,
+                                "../data/{}".format(args.FEATURES))
+train_loader = torch.utils.data.DataLoader(X_data,
+                                           batch_size=1,
+                                           shuffle=True)
 
-X_data = src.datasets.CelebA_Features("../data/celeba/celebA_female.csv",
-                                      "../data/facenet")
 
 Y_data = src.datasets.CelebA_Features_Kernel(
-                    "../data/celeba/celebA_male.csv",
-                    "../data/facenet",
-                    scale=.01)
+                    args.DATASET_Y,
+                    "../data/{}".format(args.FEATURES),
+                    scale=.001)
 
-indices = random.sample(range(len(Y_data)), 10000)
+
+indices = random.sample(range(len(Y_data)), len(train_loader))
 Y_subset = torch.utils.data.Subset(Y_data, indices)
 
-train_loader = torch.utils.data.DataLoader(X_data,
-                                           batch_size=1)
-
 Y_loader = torch.utils.data.DataLoader(Y_subset,
-                                       batch_size=300)
+                                       batch_size=1)
 
-convex_f = Simple_Feedforward_5Layer_ICNN_LastInp_Quadratic(512,
-                                                             512,
-                                                             "leaky_relu")
+convex_f = Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic(args.INPUT_DIM,
+                                                        args.NUM_NEURON,
+                                                        args.activation)
 convex_f.load_state_dict(
     torch.load(model_save_path + '/convex_f_epoch_{}.pt'.format(args.epoch)))
 convex_f.eval()
 
-convex_g = Simple_Feedforward_5Layer_ICNN_LastInp_Quadratic(512,
-                                                             512,
-                                                             "leaky_relu")
+convex_g = Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic(args.INPUT_DIM,
+                                                        args.NUM_NEURON,
+                                                        args.activation)
 convex_g.load_state_dict(
     torch.load(model_save_path + '/convex_g_epoch_{}.pt'.format(args.epoch)))
-convex_g = convex_g.eval()
+convex_g.eval()
 
 if args.cuda:
     convex_f.cuda()
+    convex_g.cuda()
 
 elif args.mps:
     convex_f.to("mps")
+    convex_g.to("mps")
 
 sum_list = list()
 norm_list = list()
+ot_loss_list = list()
 for batch, _, _, _ in Y_loader:
-    temp_sum = convex_g(batch).reshape(-1).sum().item()
-    temp_norm = torch.linalg.norm(batch, 2, dim=1).pow(2).sum().item()
+
+    if args.cuda:
+        batch = batch.cuda()
+
+    temp_sum = convex_g(batch).reshape(-1).item()
+    temp_norm = 0.5*batch.pow(2).sum(dim=1).mean().item()
+    batch.requires_grad = True
+
+    g_of_y = convex_g(batch).sum()
+
+    grad_g_of_y = torch.autograd.grad(g_of_y, batch, create_graph=True)[0]
+
+    f_grad_g_y = convex_f(grad_g_of_y)
+    dot_prod = (grad_g_of_y * batch).sum(dim=1)
+
+    loss_g = f_grad_g_y.item() - dot_prod.item()
+
+    ot_loss_list.append(loss_g)
     sum_list.append(temp_sum)
     norm_list.append(temp_norm)
 
-g_average = sum(sum_list)/len(Y_subset)
-norm_average = sum(norm_list)/len(Y_subset)
+ot_loss_average = np.array(ot_loss_list).mean()
+g_average = np.array(sum_list).mean()
+norm_average = np.array(norm_list).mean()
 
+f_list = list()
+norm_x_list = list()
 for imgs, ids, _, _ in train_loader:
     ids = ids.item()
     if args.cuda:
@@ -135,13 +318,17 @@ for imgs, ids, _, _ in train_loader:
     elif args.mps:
         imgs = imgs.to("mps")
 
-    val = (.5*torch.linalg.norm(imgs.reshape(-1), 2)**2 -
-           convex_f(imgs)).item()
-    df.loc[ids, "values_facenet"] = val
+    val = (0.5*imgs.pow(2).sum(dim=1).mean().item() -
+           convex_f(imgs).item())
 
-# df.values_resnet18 += (.5*norm_average - g_average)
+    f_list.append(convex_f(imgs).item())
+    norm_x_list.append(0.5*imgs.pow(2).sum(dim=1).mean().item())
+    df.loc[ids, "values_{}".format(args.FEATURES)] = val
 
-df.to_csv("../data/celeba/celebA_female.csv", index=False)
+df["values_{}".format(args.FEATURES)] += (norm_average +
+                                          ot_loss_average)
+
+df.to_csv(args.DATASET_X, index=False)
 
 # =============================================================================
 # img_ids = df.sort_values(by="values", ascending=False)["image_id"][:36]
