@@ -25,13 +25,13 @@ parser = argparse.ArgumentParser(description='Experiment1 Evaluation')
 parser.add_argument('--DATASET_Y',
                     type=str,
                     default=("../data/celeba/"
-                             "experiment1_Female_Eyeglasses.csv"),
+                             "experiment1_Male_Wearing_Hat.csv"),
                     help='X data')
 
 parser.add_argument('--DATASET_X',
                     type=str,
                     default=("../data/celeba/"
-                             "experiment1_Male_Eyeglasses_90%.csv"),
+                             "experiment1_Female_Wearing_Hat_10%.csv"),
                     help='Y data')
 
 parser.add_argument('--FEATURES',
@@ -173,7 +173,7 @@ attribute = args.DATASET_X.split("_")[-2]
 percentage = args.DATASET_X[-7:-5]
 
 if args.optimizer == 'SGD':
-    results_save_path = ('../results/Experiment1/{15}/{16}/'
+    results_save_path = ('../results/Experiment1/Female_{15}/{16}/'
                          'Results_CelebA_{14}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{10}_mean_{11}/optim_{8}lr_{2}momen_{7}/'
@@ -196,7 +196,7 @@ if args.optimizer == 'SGD':
                                     percentage)
 
 elif args.optimizer == 'Adam':
-    results_save_path = ('../results/Experiment1/{15}/{16}/'
+    results_save_path = ('../results/Experiment1/Female_{15}/{16}/'
                          'Results_CelebA_{14}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{11}_mean_{12}/'
