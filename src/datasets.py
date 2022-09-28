@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jul 21 09:14:17 2022
-
-@author: simonefabrizzi
-"""
-
 import os
 import torch
 import pandas as pd
@@ -51,7 +43,7 @@ class CelebA(data.Dataset):
         if self.transform:
             image = self.transform(image)
 
-        return image,  idx, self.celeba.loc[idx, "image_id"]
+        return image, idx, self.celeba.loc[idx, "image_id"]
 
 
 class CelebA_Features(data.Dataset):
@@ -90,17 +82,17 @@ class CelebA_Features_Kernel(data.Dataset):
     def __init__(self,
                  csv_file,
                  root_dir,
-                 scale=0.1):
+                 var=0.1):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
             root_dir (string): Directory with all the features vectors.
-            scale (float): standard deviation of the kernel distribution.
+            var (float): standard deviation of the kernel distribution.
         """
         self.celeba = pd.read_csv(csv_file)
 
         self.root_dir = root_dir
-        self.scale = scale
+        self.var = var
 
     def __len__(self):
         return len(self.celeba)
@@ -117,7 +109,7 @@ class CelebA_Features_Kernel(data.Dataset):
 
         m = torch.distributions.MultivariateNormal(
                                         x.reshape(-1),
-                                        self.scale*torch.eye(x.shape[1]))
+                                        self.var*torch.eye(x.shape[1]))
         sample = m.sample()
 
         return (sample.detach(),
@@ -175,13 +167,13 @@ class Pet_Features_Kernel(data.Dataset):
     def __init__(self,
                  root_dir,
                  cats=None,
-                 scale=0.1):
+                 var=0.1):
         """
         Args:
             root_dir (string): Directory with all the features vectors.
             cats (bool): retreive only images with attribute cat = cats.
                         If None, ot retrieves all.
-            scale (float): standard deviation of the kernel distribution.
+            var (float): standard deviation of the kernel distribution.
         """
         self.root_dir = root_dir
 
@@ -195,7 +187,7 @@ class Pet_Features_Kernel(data.Dataset):
             self.list = [file for file in os.listdir(root_dir)
                          if not file[0].isupper()]
 
-        self.scale = scale
+        self.var = var
 
     def __len__(self):
         return len(self.list)
@@ -217,7 +209,7 @@ class Pet_Features_Kernel(data.Dataset):
 
         m = torch.distributions.MultivariateNormal(
                                         x.reshape(-1),
-                                        self.scale*torch.eye(x.shape[1]))
+                                        self.var*torch.eye(x.shape[1]))
         sample = m.sample()
 
         return (sample.reshape(-1).detach(),

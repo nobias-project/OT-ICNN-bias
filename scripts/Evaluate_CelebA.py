@@ -9,17 +9,14 @@ Created on Fri Jul 22 13:55:17 2022
 from __future__ import print_function
 import argparse
 import torch
-import torch.nn as nn
 import random
 from src.optimal_transport_modules.icnn_modules import *
 import numpy as np
 import pandas as pd
 import torch.utils.data
 import src.datasets
-from src.utils import *
-from PIL import Image
 
-
+# argument parsing
 parser = argparse.ArgumentParser(description='Experiment1 Evaluation')
 
 parser.add_argument('--DATASET_Y',
@@ -137,13 +134,9 @@ parser.add_argument('--N_PLOT',
                     default=16,
                     help='number of samples for plotting')
 
-parser.add_argument('--SCALE',
-                    type=float,
-                    default=10.0,
-                    help='scale for the gaussian_mixtures')
 parser.add_argument('--VARIANCE',
                     type=float,
-                    default=0.5,
+                    default=0.001,
                     help='variance for each mixture')
 
 parser.add_argument('--no-cuda',
@@ -224,7 +217,8 @@ model_save_path = results_save_path + '/storing_models'
 args = parser.parse_args()
 
 args.cuda = not args.no_cuda and torch.cuda.is_available()
-args.mps = False  #torch.backends.mps.is_available()
+args.mps = False  # torch.backends.mps.is_available()
+
 
 def compute_optimal_transport_map(y, convex_g):
 
@@ -234,7 +228,7 @@ def compute_optimal_transport_map(y, convex_g):
 
     return grad_g_of_y
 
-
+# load data
 df = pd.read_csv(args.DATASET_X)
 df["values_{}".format(args.FEATURES)] = [None]*len(df)
 
@@ -249,7 +243,7 @@ train_loader = torch.utils.data.DataLoader(X_data,
 Y_data = src.datasets.CelebA_Features_Kernel(
                     args.DATASET_Y,
                     "../data/{}".format(args.FEATURES),
-                    scale=.001)
+                    var=args.VARIANCE)
 
 
 indices = random.sample(range(len(Y_data)), len(train_loader))
@@ -258,14 +252,17 @@ Y_subset = torch.utils.data.Subset(Y_data, indices)
 Y_loader = torch.utils.data.DataLoader(Y_subset,
                                        batch_size=1)
 
-convex_f = Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic(args.INPUT_DIM,
+# load kantorovich potentials
+convex_f = Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic(
+                                                        args.INPUT_DIM,
                                                         args.NUM_NEURON,
                                                         args.activation)
 convex_f.load_state_dict(
     torch.load(model_save_path + '/convex_f_epoch_{}.pt'.format(args.epoch)))
 convex_f.eval()
 
-convex_g = Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic(args.INPUT_DIM,
+convex_g = Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic(
+                                                        args.INPUT_DIM,
                                                         args.NUM_NEURON,
                                                         args.activation)
 convex_g.load_state_dict(
@@ -280,6 +277,7 @@ elif args.mps:
     convex_f.to("mps")
     convex_g.to("mps")
 
+# compute ot loss for g and avare norm of vectors in Y
 sum_list = list()
 norm_list = list()
 ot_loss_list = list()
@@ -309,6 +307,7 @@ ot_loss_average = np.array(ot_loss_list).mean()
 g_average = np.array(sum_list).mean()
 norm_average = np.array(norm_list).mean()
 
+# for each vector in X compute its norm and is value of f
 f_list = list()
 norm_x_list = list()
 for imgs, ids, _, _ in train_loader:
@@ -329,57 +328,3 @@ df["values_{}".format(args.FEATURES)] += (norm_average +
                                           ot_loss_average)
 
 df.to_csv(args.DATASET_X, index=False)
-
-# =============================================================================
-# img_ids = df.sort_values(by="values", ascending=False)["image_id"][:36]
-# array_img_vectors = np.array(
-#     [skimage.io.imread("../data/celeba/Img_folder/Img/" + file)
-#      for file in img_ids])
-# 
-# path = results_save_path+'/grid_epoch_{}_female.jpeg'.format(args.epoch)
-# save_images_as_grid(path, array_img_vectors)
-# 
-# img_ids = df.sort_values(by="values1", ascending=False)["image_id"][:36]
-# array_img_vectors = np.array(
-#     [skimage.io.imread("../data/celeba/Img_folder/Img/" + file)
-#      for file in img_ids])
-# 
-# 
-# path = results_save_path+'/grid_epoch_{}_female_value2.jpeg'.format(args.epoch)
-# save_images_as_grid(path, array_img_vectors)
-# 
-# =============================================================================
-# =============================================================================
-# 
-# ##################################################################
-# # cluster the top 10% images
-# last_decile = df[df["values"] >= np.percentile(df["values"], 90)]
-# 
-# last_decile = last_decile.reset_index()
-# X_data = src.datasets.CelebA(None,
-#                              "../data/celeba/Img_folder/Img",
-#                              df=last_decile,
-#                              transform=transform)
-# 
-# train_loader = torch.utils.data.DataLoader(X_data,
-#                                            batch_size=args.BATCH_SIZE)
-# 
-# space = []
-# for imgs, ids, _ in train_loader:
-#     if args.cuda:
-#         imgs = imgs.cuda()
-# 
-#     with torch.no_grad():
-#         features_vector = features(imgs).cpu().numpy()
-# 
-#     space.append(features_vector)
-# 
-# space = np.concatenate(space)
-# 
-# kmeans = KMeans(4)
-# kmeans.fit(space)
-# 
-# last_decile["cluster"] = kmeans.labels_
-# last_decile.to_csv("../data/celeba/celebA_female_last_decile.csv", index=False)
-# 
-# =============================================================================

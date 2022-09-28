@@ -5,7 +5,6 @@ import torch
 import torch.optim as optim
 import random
 import numpy as np
-import pandas as pd
 import os
 import logging
 import torch.utils.data
@@ -29,13 +28,13 @@ parser = argparse.ArgumentParser(description='Experiment1')
 parser.add_argument('--DATASET_Y',
                     type=str,
                     default=("../data/celeba/"
-                             "experiment1_Male_Wearing_Hat.csv"),
+                             "experiment1_Female_Wearing_Hat.csv"),
                     help='X data')
 
 parser.add_argument('--DATASET_X',
                     type=str,
                     default=("../data/celeba/"
-                             "experiment1_Female_Wearing_Hat_30%.csv"),
+                             "experiment1_Male_Wearing_Hat_90%.csv"),
                     help='Y data')
 
 parser.add_argument('--FEATURES',
@@ -136,19 +135,10 @@ parser.add_argument('--log-interval',
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
 
-parser.add_argument('--N_PLOT',
-                    type=int,
-                    default=16,
-                    help='number of samples for plotting')
-
-parser.add_argument('--SCALE',
-                    type=float,
-                    default=10.0,
-                    help='scale for the gaussian_mixtures')
 parser.add_argument('--VARIANCE',
                     type=float,
-                    default=0.5,
-                    help='variance for each mixture')
+                    default=0.001,
+                    help='variance for the kernel estimatioon')
 
 parser.add_argument('--no-cuda',
                     action='store_true',
@@ -177,7 +167,7 @@ attribute = args.DATASET_X.split("_")[-2]
 percentage = args.DATASET_X[-7:-5]
 
 if args.optimizer == 'SGD':
-    results_save_path = ('../results/Experiment1/Female_{15}/{16}/'
+    results_save_path = ('../results/Experiment1/{15}/{16}/'
                          'Results_CelebA_{14}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{10}_mean_{11}/optim_{8}lr_{2}momen_{7}/'
@@ -200,7 +190,7 @@ if args.optimizer == 'SGD':
                                     percentage)
 
 elif args.optimizer == 'Adam':
-    results_save_path = ('../results/Experiment1/Female_{15}/{16}/'
+    results_save_path = ('../results/Experiment1/{15}/{16}/'
                          'Results_CelebA_{14}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{11}_mean_{12}/'
@@ -252,7 +242,7 @@ logging.info("Created the data loader for X\n")
 Y_data = src.datasets.CelebA_Features_Kernel(
                     args.DATASET_Y,
                     "../data/{}".format(args.FEATURES),
-                    scale=.001)
+                    var=args.VARIANCE)
 
 ############################################################
 # Model stuff
@@ -268,15 +258,6 @@ def compute_constraint_loss(list_of_params):
     for p in list_of_params:
         loss_val += torch.relu(-p).pow(2).sum()
     return loss_val
-
-
-def compute_optimal_transport_map(y, convex_g):
-
-    g_of_y = convex_g(y).sum()
-
-    grad_g_of_y = torch.autograd.grad(g_of_y, y, create_graph=True)[0]
-
-    return grad_g_of_y
 
 
 def truncated_normal(size, threshold=1):
@@ -446,8 +427,6 @@ def train(epoch):
     convex_f.train()
     convex_g.train()
 
-    # count = 0
-
     w_2_loss_value_epoch = 0
 
     g_OT_loss_value_epoch = 0
@@ -598,10 +577,6 @@ total_g_OT_epoch_loss_list = []
 total_g_Constraint_epoch_loss_list = []
 
 for epoch in range(1, args.epochs + 1):
-
-    # transported_y = compute_optimal_transport_map(y_plot, convex_g)
-
-    # plot_transported_samples(transported_y, epoch)
 
     (w_2_loss_value_epoch,
      g_OT_loss_value_epoch,
