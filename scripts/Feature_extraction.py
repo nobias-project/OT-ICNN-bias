@@ -37,12 +37,10 @@ args.mps = not args.no_cuda and torch.backends.mps.is_available()
 if args.FEATURES == "resnet18":
     features = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).eval()
     features.fc = nn.Identity()
-    features.layer4 = nn.Identity()
 
 elif args.FEATURES == "resnet50":
     features = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1).eval()
     features.fc = nn.Identity()
-    features.layer4 = nn.Identity()
 
 if args.cuda:
     features.cuda()
