@@ -7,11 +7,8 @@ import pandas as pd
 from torchvision import transforms
 from torchvision.models import resnet18, ResNet18_Weights
 from torchvision.models import resnet50, ResNet50_Weights
-import facenet_pytorch as facenet
-
 from skimage import io
 from PIL import Image
-
 
 # Argument parsing
 parser = argparse.ArgumentParser(description='Features Extraction')
@@ -40,13 +37,12 @@ args.mps = not args.no_cuda and torch.backends.mps.is_available()
 if args.FEATURES == "resnet18":
     features = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).eval()
     features.fc = nn.Identity()
+    features.layer4 = nn.Identity()
 
 elif args.FEATURES == "resnet50":
     features = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1).eval()
     features.fc = nn.Identity()
-
-elif args.FEATURES == "facenet":
-    features = facenet.InceptionResnetV1(pretrained='vggface2').eval()
+    features.layer4 = nn.Identity()
 
 if args.cuda:
     features.cuda()
@@ -84,7 +80,7 @@ if args.DATASET == "celeba":
 
 if args.DATASET == "oxford-iiit-pet":
     transform = transforms.Compose([transforms.ToTensor()])
-
+                                    # transforms.Resize(160)])
     root_dir = "../data/oxford-iiit-pet/images"
     os.makedirs("../data/{}/{}".format(args.DATASET, args.FEATURES),
                 exist_ok=True)

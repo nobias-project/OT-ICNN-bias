@@ -1,14 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 22 13:55:17 2022
-
-@author: simonefabrizzi
-"""
-
 from __future__ import print_function
 import argparse
-import torch
 import random
 from src.optimal_transport_modules.icnn_modules import *
 import numpy as np

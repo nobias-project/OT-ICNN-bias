@@ -1,23 +1,14 @@
 from __future__ import print_function
 
 import argparse
-import torch
 import torch.optim as optim
 import random
-import facenet_pytorch as facenet
-import numpy as np
-import pandas as pd
-import os
 import logging
 import torch.utils.data
-import matplotlib
 
 import src.datasets
 import src.optimal_transport_modules
 
-from torchvision import transforms
-from torchvision.models import resnet18, ResNet18_Weights
-from torch.autograd import Variable
 from torchvision.utils import make_grid
 from matplotlib import pyplot as plt
 from PIL import Image

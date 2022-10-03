@@ -8,22 +8,12 @@ Created on Fri Jul 22 13:55:17 2022
 
 from __future__ import print_function
 import argparse
-import torch
-import torch.nn as nn
-import random
 from src.optimal_transport_modules.icnn_modules import *
-import facenet_pytorch as facenet
-import numpy as np
-import pandas as pd
-import skimage
 import torch.utils.data
 import src.datasets
 from src.utils import *
-from torchvision import transforms
 from torchvision.utils import make_grid
 from PIL import Image
-from sklearn.cluster import KMeans
-from torchvision.models import resnet18, ResNet18_Weights
 
 parser = argparse.ArgumentParser(description='PyTorch Oxford Pet '
                                              'Experiment Evaluation')
@@ -161,58 +151,3 @@ with open(path_csv, "w") as file:
         line = name[0] + "," + str(val) + "," + str(val1) + "\n"
 
         file.write(line)
-# df.values_resnet18 += (.5*norm_average - g_average)
-
-# =============================================================================
-# img_ids = df.sort_values(by="values", ascending=False)["image_id"][:36]
-# array_img_vectors = np.array(
-#     [skimage.io.imread("../data/celeba/Img_folder/Img/" + file)
-#      for file in img_ids])
-# 
-# path = results_save_path+'/grid_epoch_{}_female.jpeg'.format(args.epoch)
-# save_images_as_grid(path, array_img_vectors)
-# 
-# img_ids = df.sort_values(by="values1", ascending=False)["image_id"][:36]
-# array_img_vectors = np.array(
-#     [skimage.io.imread("../data/celeba/Img_folder/Img/" + file)
-#      for file in img_ids])
-# 
-# 
-# path = results_save_path+'/grid_epoch_{}_female_value2.jpeg'.format(args.epoch)
-# save_images_as_grid(path, array_img_vectors)
-# 
-# =============================================================================
-# =============================================================================
-# 
-# ##################################################################
-# # cluster the top 10% images
-# last_decile = df[df["values"] >= np.percentile(df["values"], 90)]
-# 
-# last_decile = last_decile.reset_index()
-# X_data = src.datasets.CelebA(None,
-#                              "../data/celeba/Img_folder/Img",
-#                              df=last_decile,
-#                              transform=transform)
-# 
-# train_loader = torch.utils.data.DataLoader(X_data,
-#                                            batch_size=args.BATCH_SIZE)
-# 
-# space = []
-# for imgs, ids, _ in train_loader:
-#     if args.cuda:
-#         imgs = imgs.cuda()
-# 
-#     with torch.no_grad():
-#         features_vector = features(imgs).cpu().numpy()
-# 
-#     space.append(features_vector)
-# 
-# space = np.concatenate(space)
-# 
-# kmeans = KMeans(4)
-# kmeans.fit(space)
-# 
-# last_decile["cluster"] = kmeans.labels_
-# last_decile.to_csv("../data/celeba/celebA_female_last_decile.csv", index=False)
-# 
-# =============================================================================
