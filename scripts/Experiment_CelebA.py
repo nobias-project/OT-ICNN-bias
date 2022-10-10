@@ -22,16 +22,16 @@ from src.utils import *
 # Training settings. Important ones first
 parser = argparse.ArgumentParser(description='Experiment1')
 
-parser.add_argument('--DATASET_Y',
-                    type=str,
-                    default=("../data/celeba/"
-                             "experiment1_Female_Wearing_Hat.csv"),
-                    help='X data')
-
 parser.add_argument('--DATASET_X',
                     type=str,
                     default=("../data/celeba/"
-                             "experiment1_Male_Wearing_Hat_90%.csv"),
+                             "experiment1_Male_Wearing_Necktie_60%.csv"),
+                    help='X data')
+
+parser.add_argument('--DATASET_Y',
+                    type=str,
+                    default=("../data/celeba/"
+                             "experiment1_Female_Wearing_Necktie.csv"),
                     help='Y data')
 
 parser.add_argument('--FEATURES',
@@ -88,7 +88,7 @@ parser.add_argument('--initialization',
 parser.add_argument('--TRIAL',
                     type=int,
                     default=1,
-                    help='the trail no.')
+                    help='the trial no.')
 
 parser.add_argument('--optimizer',
                     type=str,
@@ -118,7 +118,7 @@ parser.add_argument('--LAMBDA_CVX',
                     'positive weight constraints')
 parser.add_argument('--LAMBDA_MEAN',
                     type=float,
-                    default=0.0,
+                    default=0,
                     help='Regularization constant for '
                     'matching mean and covariance')
 
@@ -227,8 +227,9 @@ kwargs = {'num_workers': 1, 'pin_memory': True} if (args.cuda or
 # Data stuff
 
 X_data = src.datasets.CelebA_Features(
-                                args.DATASET_X,
-                                "../data/{}".format(args.FEATURES))
+                    args.DATASET_X,
+                    "../data/{}".format(args.FEATURES))
+
 train_loader = torch.utils.data.DataLoader(X_data,
                                            batch_size=args.BATCH_SIZE,
                                            shuffle=True,
@@ -416,9 +417,8 @@ if args.optimizer == 'Adam':
                              betas=(args.beta1, args.beta2),
                              weight_decay=1e-5)
 
+
 # Training stuff
-
-
 def train(epoch):
 
     convex_f.train()
@@ -445,7 +445,7 @@ def train(epoch):
                                                batch_size=len(real_data),
                                                shuffle=True,
                                                **kwargs)
-        y, _, _, _ = next(iter(Y_loader))
+        y, _, _, _, _ = next(iter(Y_loader))
 
         if args.cuda:
             y = y.cuda()

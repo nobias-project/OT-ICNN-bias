@@ -10,16 +10,16 @@ import src.datasets
 # argument parsing
 parser = argparse.ArgumentParser(description='Experiment1 Evaluation')
 
-parser.add_argument('--DATASET_Y',
-                    type=str,
-                    default=("../data/celeba/"
-                             "experiment1_Male_Wearing_Hat.csv"),
-                    help='X data')
-
 parser.add_argument('--DATASET_X',
                     type=str,
                     default=("../data/celeba/"
-                             "experiment1_Female_Wearing_Hat_10%.csv"),
+                             "experiment1_Male_Wearing_Necktie_90%.csv"),
+                    help='X data')
+
+parser.add_argument('--DATASET_Y',
+                    type=str,
+                    default=("../data/celeba/"
+                             "experiment1_Female_Wearing_Necktie.csv"),
                     help='Y data')
 
 parser.add_argument('--FEATURES',
@@ -39,7 +39,7 @@ parser.add_argument('--BATCH_SIZE',
 
 parser.add_argument('--epoch',
                     type=int,
-                    default=30,
+                    default=20,
                     metavar='S',
                     help='number_of_epochs')
 
@@ -157,7 +157,7 @@ attribute = args.DATASET_X.split("_")[-2]
 percentage = args.DATASET_X[-7:-5]
 
 if args.optimizer == 'SGD':
-    results_save_path = ('../results/Experiment1/Female_{15}/{16}/'
+    results_save_path = ('../results/Experiment1/{15}/{16}/'
                          'Results_CelebA_{14}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{10}_mean_{11}/optim_{8}lr_{2}momen_{7}/'
@@ -180,7 +180,7 @@ if args.optimizer == 'SGD':
                                     percentage)
 
 elif args.optimizer == 'Adam':
-    results_save_path = ('../results/Experiment1/Female_{15}/{16}/'
+    results_save_path = ('../results/Experiment1/{15}/{16}/'
                          'Results_CelebA_{14}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{11}_mean_{12}/'
@@ -220,7 +220,7 @@ def compute_optimal_transport_map(y, convex_g):
     return grad_g_of_y
 
 # load data
-df = pd.read_csv(args.DATASET_X)
+df = pd.read_csv(args.DATASET_Y)
 df["values_{}".format(args.FEATURES)] = [None]*len(df)
 
 X_data = src.datasets.CelebA_Features(
@@ -268,54 +268,14 @@ elif args.mps:
     convex_f.to("mps")
     convex_g.to("mps")
 
-# compute ot loss for g and avare norm of vectors in Y
-sum_list = list()
-norm_list = list()
-ot_loss_list = list()
-for batch, _, _, _ in Y_loader:
+# compute ot loss for g and aware norm of vectors in Y
+wasserstein = list()
+
+for batch, ids, _, _ in train_loader:
 
     if args.cuda:
         batch = batch.cuda()
 
-    temp_sum = convex_g(batch).reshape(-1).item()
-    temp_norm = 0.5*batch.pow(2).sum(dim=1).mean().item()
-    batch.requires_grad = True
-
-    g_of_y = convex_g(batch).sum()
-
-    grad_g_of_y = torch.autograd.grad(g_of_y, batch, create_graph=True)[0]
-
-    f_grad_g_y = convex_f(grad_g_of_y)
-    dot_prod = (grad_g_of_y * batch).sum(dim=1)
-
-    loss_g = f_grad_g_y.item() - dot_prod.item()
-
-    ot_loss_list.append(loss_g)
-    sum_list.append(temp_sum)
-    norm_list.append(temp_norm)
-
-ot_loss_average = np.array(ot_loss_list).mean()
-g_average = np.array(sum_list).mean()
-norm_average = np.array(norm_list).mean()
-
-# for each vector in X compute its norm and is value of f
-f_list = list()
-norm_x_list = list()
-for imgs, ids, _, _ in train_loader:
-    ids = ids.item()
-    if args.cuda:
-        imgs = imgs.cuda()
-    elif args.mps:
-        imgs = imgs.to("mps")
-
-    val = (0.5*imgs.pow(2).sum(dim=1).mean().item() -
-           convex_f(imgs).item())
-
-    f_list.append(convex_f(imgs).item())
-    norm_x_list.append(0.5*imgs.pow(2).sum(dim=1).mean().item())
-    df.loc[ids, "values_{}".format(args.FEATURES)] = val
-
-df["values_{}".format(args.FEATURES)] += (norm_average +
-                                          ot_loss_average)
+    df.loc[ids, "values_{}".format(args.FEATURES)] = .5*batch.pow(2).sum().item() - convex_f(batch).item()
 
 df.to_csv(args.DATASET_X, index=False)

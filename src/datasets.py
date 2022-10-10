@@ -114,6 +114,7 @@ class CelebA_Features_Kernel(data.Dataset):
 
         return (sample.detach(),
                 idx,
+                x.detach(),
                 self.celeba.loc[idx, "image_id"],
                 self.celeba.loc[idx, "Male"])
 
