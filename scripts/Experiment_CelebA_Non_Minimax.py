@@ -1,18 +1,16 @@
 from __future__ import print_function
 
 import argparse
+import logging
+import random
 
 import torch.optim as optim
-import random
-import logging
 import torch.utils.data
-
-import src.datasets
-import src.optimal_transport_modules
-
 from matplotlib import pyplot as plt
 from scipy.stats import truncnorm
 
+import src.datasets
+import src.optimal_transport_modules
 from src.optimal_transport_modules.icnn_modules import *
 from src.utils import *
 
@@ -25,13 +23,13 @@ parser = argparse.ArgumentParser(description='Experiment1')
 parser.add_argument('--DATASET_X',
                     type=str,
                     default=("../data/celeba/"
-                             "experiment1_Male_Wearing_Necktie_60%.csv"),
+                             "experiment1_Male_Eyeglasses_90%.csv"),
                     help='X data')
 
 parser.add_argument('--DATASET_Y',
                     type=str,
                     default=("../data/celeba/"
-                             "experiment1_Female_Wearing_Necktie.csv"),
+                             "experiment1_Female_Eyeglasses.csv"),
                     help='Y data')
 
 parser.add_argument('--FEATURES',
@@ -92,12 +90,12 @@ parser.add_argument('--TRIAL',
 
 parser.add_argument('--optimizer',
                     type=str,
-                    default='SGD',
+                    default='Adam',
                     help='which optimizer to use')
 
 parser.add_argument('--LR',
                     type=float,
-                    default=1e-5,
+                    default=1e-3,
                     help='learning rate')
 
 parser.add_argument('--momentum',
@@ -106,8 +104,6 @@ parser.add_argument('--momentum',
                     metavar='M',
                     help='SGD momentum (default: 0.5)')
 
-# parameters of different optimisers
-parser.add_argument('--alpha', type=float, default=0.99)
 parser.add_argument('--beta1', type=float, default=0.5)
 parser.add_argument('--beta2', type=float, default=0.99)
 
@@ -115,12 +111,12 @@ parser.add_argument('--beta2', type=float, default=0.99)
 # Less frequently used training settings
 parser.add_argument('--LAMBDA_CVX',
                     type=float,
-                    default=0.5,
+                    default=0.1,
                     help='Regularization constant for '
                     'positive weight constraints')
 parser.add_argument('--LAMBDA_MEAN',
                     type=float,
-                    default=0.0,
+                    default=0,
                     help='Regularization constant for '
                     'matching mean and covariance')
 
@@ -166,8 +162,8 @@ attribute = args.DATASET_X.split("_")[-2]
 percentage = args.DATASET_X[-7:-5]
 
 if args.optimizer == 'SGD':
-    results_save_path = ('../results/Experiment1/{14}/{15}/'
-                         'Results_CelebA_{13}/'
+    results_save_path = ('../results/Experiment1/{15}/{16}/'
+                         'Results_CelebA_{14}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{10}_mean_{11}/optim_{8}lr_{2}momen_{7}/'
                          'gen_{9}/batch_{3}/trial_{4}_last_{12}_qudr').format(
@@ -204,30 +200,6 @@ elif args.optimizer == 'Adam':
                                      args.beta1,
                                      args.beta2,
                                      'Adam',
-                                     args.N_GENERATOR_ITERS,
-                                     args.LAMBDA_CVX,
-                                     args.LAMBDA_MEAN,
-                                     'full' if args.full_quadratic else 'inp',
-                                     args.FEATURES,
-                                     attribute,
-                                     percentage)
-
-elif args.optimizer == 'RMSProp':
-    results_save_path = ('../results/Experiment1/{15}/{16}/'
-                         'Results_CelebA_{14}/'
-                         'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
-                         'lambda_cvx_{11}_mean_{12}/'
-                         'optim_{9}lr_{2}alpha_{7}_moment{8}/gen_{10}/batch_{3}/'
-                         'trial_{4}_last_{13}_qudr').format(
-                                     args.NUM_LAYERS,
-                                     args.NUM_NEURON,
-                                     args.LR, args.BATCH_SIZE,
-                                     args.TRIAL,
-                                     args.INPUT_DIM,
-                                     args.initialization,
-                                     args.alpha,
-                                     args.momentum,
-                                     'RMSProp',
                                      args.N_GENERATOR_ITERS,
                                      args.LAMBDA_CVX,
                                      args.LAMBDA_MEAN,
@@ -274,6 +246,13 @@ Y_data = src.datasets.CelebA_Features_Kernel(
 # This loss is a relaxation of positive constraints on the weights
 # Hence we penalize the negative ReLU
 
+def compute_optimal_transport_map(y, convex_g):
+
+    g_of_y = convex_g(y).sum()
+
+    grad_g_of_y = torch.autograd.grad(g_of_y, y, create_graph=True)[0]
+
+    return grad_g_of_y
 
 def compute_constraint_loss(list_of_params):
 
@@ -432,7 +411,7 @@ if args.optimizer == 'SGD':
                             lr=args.LR,
                             momentum=args.momentum)
 
-elif args.optimizer == 'Adam':
+if args.optimizer == 'Adam':
 
     optimizer_f = optim.Adam(convex_f.parameters(),
                              lr=args.LR,
@@ -442,17 +421,6 @@ elif args.optimizer == 'Adam':
                              lr=args.LR,
                              betas=(args.beta1, args.beta2),
                              weight_decay=1e-5)
-
-elif args.optimizer == 'RMSProp':
-
-    optimizer_f = optim.RMSprop(convex_f.parameters(),
-                             lr=args.LR,
-                             alpha=args.alpha,
-                             momentum=args.momentum)
-    optimizer_g = optim.RMSprop(convex_f.parameters(),
-                             lr=args.LR,
-                             alpha=args.alpha,
-                             momentum=args.momentum)
 
 
 # Training stuff
@@ -505,14 +473,13 @@ def train(epoch):
 
             optimizer_g.zero_grad()
 
-            g_of_y = convex_g(y).sum()
+            grad_g_of_y = compute_optimal_transport_map(y, convex_g)
+            grad_f_grad_g_of_y = compute_optimal_transport_map(grad_g_of_y, convex_f)
 
-            grad_g_of_y = torch.autograd.grad(g_of_y, y, create_graph=True)[0]
+            f_grad_g_y = convex_f(grad_g_of_y)
+            dot_prod = (grad_g_of_y * y).sum(dim=1)
 
-            f_grad_g_y = convex_f(grad_g_of_y).mean()
-            dot_prod = (grad_g_of_y * y).sum(dim=1).mean()
-
-            loss_g = f_grad_g_y - dot_prod
+            loss_g = (-f_grad_g_y + dot_prod - convex_g(y)).mean()**2
             g_OT_loss_val_batch += loss_g.item()
 
             if args.LAMBDA_MEAN > 0:
@@ -556,7 +523,6 @@ def train(epoch):
             p.grad.copy_(-p.grad)
 
         remaining_f_loss = convex_f(real_data).mean()
-        remaining_f_loss.backward()
 
         optimizer_f.step()
 

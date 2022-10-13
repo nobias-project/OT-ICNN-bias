@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(description='Experiment1 Evaluation')
 parser.add_argument('--DATASET_X',
                     type=str,
                     default=("../data/celeba/"
-                             "experiment1_Male_Wearing_Necktie_90%.csv"),
+                             "experiment1_Male_Wearing_Necktie_60%.csv"),
                     help='X data')
 
 parser.add_argument('--DATASET_Y',
@@ -39,7 +39,7 @@ parser.add_argument('--BATCH_SIZE',
 
 parser.add_argument('--epoch',
                     type=int,
-                    default=20,
+                    default=30,
                     metavar='S',
                     help='number_of_epochs')
 
@@ -80,12 +80,12 @@ parser.add_argument('--TRIAL',
 
 parser.add_argument('--optimizer',
                     type=str,
-                    default='Adam',
+                    default='SGD',
                     help='which optimizer to use')
 
 parser.add_argument('--LR',
                     type=float,
-                    default=1e-3,
+                    default=1e-5,
                     help='learning rate')
 
 parser.add_argument('--momentum',
@@ -94,6 +94,8 @@ parser.add_argument('--momentum',
                     metavar='M',
                     help='SGD momentum (default: 0.5)')
 
+# parameters of different optimisers
+parser.add_argument('--alpha', type=float, default=0.99)
 parser.add_argument('--beta1', type=float, default=0.5)
 parser.add_argument('--beta2', type=float, default=0.99)
 
@@ -101,7 +103,7 @@ parser.add_argument('--beta2', type=float, default=0.99)
 # Less frequently used training settings
 parser.add_argument('--LAMBDA_CVX',
                     type=float,
-                    default=0.1,
+                    default=0.5,
                     help='Regularization constant for '
                     'positive weight constraints')
 parser.add_argument('--LAMBDA_MEAN',
@@ -157,8 +159,8 @@ attribute = args.DATASET_X.split("_")[-2]
 percentage = args.DATASET_X[-7:-5]
 
 if args.optimizer == 'SGD':
-    results_save_path = ('../results/Experiment1/{15}/{16}/'
-                         'Results_CelebA_{14}/'
+    results_save_path = ('../results/Experiment1/{14}/{15}/'
+                         'Results_CelebA_{13}/'
                          'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
                          'lambda_cvx_{10}_mean_{11}/optim_{8}lr_{2}momen_{7}/'
                          'gen_{9}/batch_{3}/trial_{4}_last_{12}_qudr').format(
@@ -195,6 +197,29 @@ elif args.optimizer == 'Adam':
                                      args.beta1,
                                      args.beta2,
                                      'Adam',
+                                     args.N_GENERATOR_ITERS,
+                                     args.LAMBDA_CVX,
+                                     args.LAMBDA_MEAN,
+                                     'full' if args.full_quadratic else 'inp',
+                                     args.FEATURES,
+                                     attribute,
+                                     percentage)
+elif args.optimizer == 'RMSProp':
+    results_save_path = ('../results/Experiment1/{15}/{16}/'
+                         'Results_CelebA_{14}/'
+                         'input_dim_{5}/init_{6}/layers_{0}/neuron_{1}/'
+                         'lambda_cvx_{11}_mean_{12}/'
+                         'optim_{9}lr_{2}alpha_{7}_moment{8}/gen_{10}/batch_{3}/'
+                         'trial_{4}_last_{13}_qudr').format(
+                                     args.NUM_LAYERS,
+                                     args.NUM_NEURON,
+                                     args.LR, args.BATCH_SIZE,
+                                     args.TRIAL,
+                                     args.INPUT_DIM,
+                                     args.initialization,
+                                     args.alpha,
+                                     args.momentum,
+                                     'RMSProp',
                                      args.N_GENERATOR_ITERS,
                                      args.LAMBDA_CVX,
                                      args.LAMBDA_MEAN,
@@ -270,6 +295,35 @@ elif args.mps:
 
 # compute ot loss for g and aware norm of vectors in Y
 wasserstein = list()
+gs = list()
+OT_loss = list()
+inverse = list()
+
+for batch, ids, _, _, _ in Y_loader:
+
+    if args.cuda:
+        batch = batch.cuda()
+
+    batch.requires_grad = True
+
+    grad_g_of_batch = compute_optimal_transport_map(batch, convex_g)
+    w2 = .5*(batch - grad_g_of_batch).pow(2).sum()
+    wasserstein.append(w2.item())
+    g = .5*batch.pow(2).sum() - convex_g(batch)
+    gs.append(g.item())
+
+    f_grad_g_batch = convex_f(grad_g_of_batch)
+    dot_prod = (grad_g_of_batch * batch).sum()
+
+    loss_g = f_grad_g_batch - dot_prod
+    OT_loss.append(loss_g.item() + .5*batch.pow(2).sum().item())
+
+    grad_of_grad = compute_optimal_transport_map(grad_g_of_batch, convex_f)
+    inverse.append(torch.norm(batch - grad_of_grad, 2).item())
+
+gs = np.array(gs)
+
+print(np.array(wasserstein).mean())
 
 for batch, ids, _, _ in train_loader:
 
@@ -278,4 +332,7 @@ for batch, ids, _, _ in train_loader:
 
     df.loc[ids, "values_{}".format(args.FEATURES)] = .5*batch.pow(2).sum().item() - convex_f(batch).item()
 
+print(gs.mean() + df["values_{}".format(args.FEATURES)].mean())
+print(np.array(OT_loss).mean() + df["values_{}".format(args.FEATURES)].mean())
+print(np.array(inverse).mean())
 df.to_csv(args.DATASET_X, index=False)
