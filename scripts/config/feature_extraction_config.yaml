@@ -1,0 +1,3 @@
+dataset: "celeba"
+features: "resnet18"
+no_cuda: False

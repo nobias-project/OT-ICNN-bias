@@ -1,11 +1,15 @@
 import os
 import torch
+import torch.optim as optim
+import random
 import logging.config
 import shutil
+import numpy as np
 import pandas as pd
 from bokeh.io import output_file, save, show
 from bokeh.plotting import figure
 from bokeh.layouts import column
+from src.optimal_transport_modules.icnn_modules import *
 
 # from bokeh.charts import Line, defaults
 #
@@ -164,3 +168,257 @@ def accuracy(output, target, topk=(1,)):
     # kernel_img.add_(-kernel_img.min())
     # kernel_img.mul_(255 / kernel_img.max())
     # save_image(kernel_img, 'kernel%s.jpg' % epoch)
+
+def set_random_seeds(seed=0):
+    torch.manual_seed(seed)
+
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+
+    np.random.seed(seed)
+    random.seed(seed)
+
+def get_storing_paths(
+                    dataset,
+                    split,
+                    features,
+                    input_dim,
+                    initialization,
+                    num_layer,
+                    num_neuron,
+                    lambda_cvx,
+                    lambda_mean,
+                    optimizer,
+                    lr,
+                    n_generator_iters,
+                    batch_size,
+                    trial,
+                    full_quadratic,
+                    momentum=.5,
+                    beta1_adam=.5,
+                    beta2_adam=.99,
+                    alpha_rmsprop=.99
+                    ):
+    if full_quadratic:
+        full_quadratic_value = "full"
+    else:
+        full_quadratic_value = "inp"
+
+    if optimizer == 'SGD':
+        results_save_path = ('../results/training/{0}/{1}/'
+                             '{2}/input_dim_{3}/init_{4}/layers_{5}/neuron_{6}/'
+                             'lambda_cvx_{7}_mean_{8}/optim_{9}lr_{10}momen_{15}/'
+                             'gen_{11}/batch_{12}/trial_{13}_last_{14}_qudr').format(
+                                                                                dataset,
+                                                                                split,
+                                                                                features,
+                                                                                input_dim,
+                                                                                initialization,
+                                                                                num_layer,
+                                                                                num_neuron,
+                                                                                lambda_cvx,
+                                                                                lambda_mean,
+                                                                                optimizer,
+                                                                                lr,
+                                                                                n_generator_iters,
+                                                                                batch_size,
+                                                                                trial,
+                                                                                momentum,
+                                                                                full_quadratic_value,
+                                                                                momentum
+                                                                                )
+
+    elif args.optimizer == 'Adam':
+        results_save_path = ('../results/training/{0}/{1}/'
+                             '{2}/input_dim_{3}/init_{4}/layers_{5}/neuron_{6}/'
+                             'lambda_cvx_{7}_mean_{8}/'
+                             'optim_{9}lr_{10}betas_{15}_{16}/gen_{11}/batch_{12}/'
+                             'trial_{13}_last_{14}_qudr').format(
+                                                                dataset,
+                                                                split,
+                                                                features,
+                                                                input_dim,
+                                                                initialization,
+                                                                num_layer,
+                                                                num_neuron,
+                                                                lambda_cvx,
+                                                                lambda_mean,
+                                                                optimizer,
+                                                                lr,
+                                                                n_generator_iters,
+                                                                batch_size,
+                                                                trial,
+                                                                momentum,
+                                                                full_quadratic_value,
+                                                                beta1_adam,
+                                                                beta2_adam,
+                                                                alpha_rmsprop
+                                                                )
+
+    elif args.optimizer == 'RMSProp':
+        results_save_path = ('../results/training/{0}/{1}/'
+                             '{2}/input_dim_{3}/init_{4}/layers_{5}/neuron_{6}/'
+                             'lambda_cvx_{7}_mean_{8}/'
+                             'optim_{9}lr_{10}_moment{15}_alpha{16}/gen_{11}/batch_{12}/'
+                             'trial_{13}_last_{14}_qudr').format(
+                                                                dataset,
+                                                                split,
+                                                                features,
+                                                                input_dim,
+                                                                initialization,
+                                                                num_layer,
+                                                                num_neuron,
+                                                                lambda_cvx,
+                                                                lambda_mean,
+                                                                optimizer,
+                                                                lr,
+                                                                n_generator_iters,
+                                                                batch_size,
+                                                                trial,
+                                                                momentum,
+                                                                full_quadratic_value,
+                                                                momentum,
+                                                                alpha_rmsprop
+                                                                )
+    else:
+        raise ValueError("The optimizer must be in ['RMSProp', 'SGD', 'Adam']")
+
+    model_save_path = results_save_path + '/storing_models'
+
+    return (results_save_path, model_save_path)
+
+def get_iccns(num_layers=2,
+              full_quadratic=False,
+              input_dim=512,
+              num_neuron=512,
+              activation="leaky_relu"):
+    if num_layers == 2:
+
+        if full_quadratic:
+            convex_f = Simple_Feedforward_2Layer_ICNN_LastFull_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+            convex_g = Simple_Feedforward_2Layer_ICNN_LastFull_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+        else:
+            convex_f = Simple_Feedforward_2Layer_ICNN_LastInp_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+            convex_g = Simple_Feedforward_2Layer_ICNN_LastInp_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+
+    elif num_layers == 3:
+
+        if full_quadratic:
+            convex_f = Simple_Feedforward_3Layer_ICNN_LastFull_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+            convex_g = Simple_Feedforward_3Layer_ICNN_LastFull_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+        else:
+            convex_f = Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+            convex_g = Simple_Feedforward_3Layer_ICNN_LastInp_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+
+    elif num_layers == 4:
+
+        if full_quadratic:
+            convex_f = Simple_Feedforward_4Layer_ICNN_LastFull_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+            convex_g = Simple_Feedforward_4Layer_ICNN_LastFull_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+        else:
+            convex_f = Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+            convex_g = Simple_Feedforward_4Layer_ICNN_LastInp_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+
+    elif num_layers == 5:
+
+        if full_quadratic:
+            convex_f = Simple_Feedforward_5Layer_ICNN_LastFull_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+            convex_g = Simple_Feedforward_5Layer_ICNN_LastFull_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+        else:
+            convex_f = Simple_Feedforward_5Layer_ICNN_LastInp_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+            convex_g = Simple_Feedforward_5Layer_ICNN_LastInp_Quadratic(
+                    input_dim,
+                    num_neuron,
+                    activation)
+
+    return (convex_f, convex_g)
+
+def get_optimizers(f,
+                   g,
+                   optimizer,
+                   lr,
+                   momentum=0.5,
+                   beta1_adam=0.5,
+                   beta2_adam=0.99,
+                   alpha_rmsprop=0.99):
+
+    if optimizer == 'SGD':
+
+        optimizer_f = optim.SGD(f.parameters(),
+                                lr=lr,
+                                momentum=momentum)
+        optimizer_g = optim.SGD(g.parameters(),
+                                lr=lr,
+                                momentum=momentum)
+
+    elif optimizer == 'Adam':
+
+        optimizer_f = optim.Adam(f.parameters(),
+                                 lr=lr,
+                                 betas=(beta1_adam, beta2_adam),
+                                 weight_decay=1e-5)
+        optimizer_g = optim.Adam(g.parameters(),
+                                 lr=lr,
+                                 betas=(beta1_adam, beta2_adam),
+                                 weight_decay=1e-5)
+
+    elif optimizer == 'RMSProp':
+
+        optimizer_f = optim.RMSprop(f.parameters(),
+                                 lr=lr,
+                                 alpha=alpha_rmsprop,
+                                 momentum=momentum)
+        optimizer_g = optim.RMSprop(g.parameters(),
+                                 lr=lr,
+                                 alpha=alpha_rmsprop,
+                                 momentum=momentum)
+
+    else:
+        raise ValueError("optimizer not in ['Adam', 'RMSProp', 'SGD']")
+
+    return (optimizer_f, optimizer_g)

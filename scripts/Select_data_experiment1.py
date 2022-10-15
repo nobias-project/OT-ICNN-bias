@@ -50,7 +50,7 @@ def select_data(df,
 
         final_male = pd.concat(to_concat_male)
 
-        path = "../data/celeba/experiment1_Male_{}_{}%.csv".format(
+        path = "../data/celeba/experiment1_Male_{}_{}.csv".format(
                                                             feature2,
                                                             int(percentage*100)
                                                             )
@@ -102,7 +102,7 @@ def select_data_female(df,
 
         final_female = pd.concat(to_concat_female)
 
-        path = "../data/celeba/experiment1_Female_{}_{}%.csv".format(
+        path = "../data/celeba/experiment1_Female_{}_{}.csv".format(
                                                             feature2,
                                                             int(percentage*100)
                                                             )

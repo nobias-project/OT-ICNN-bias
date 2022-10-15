@@ -6,6 +6,8 @@ data
 *.drawio
 results/Experiment*
 results/Results*
+results/training*
+scripts/outputs
 .DS_Store
 .idea
 

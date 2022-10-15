@@ -2,6 +2,7 @@ from __future__ import print_function
 import argparse
 import random
 from src.optimal_transport_modules.icnn_modules import *
+from src.utils import set_random_seeds
 import numpy as np
 import pandas as pd
 import torch.utils.data
