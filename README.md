@@ -5,6 +5,16 @@ This work is inspired by the paper [optimal transport mapping via input convex n
 
 The repository is forked from [https://github.com/AmirTag/OT-ICNN](https://github.com/AmirTag/OT-ICNN)
 
+## Get Started 
+To use our code and reproduce our results please follow the following guidelines. 
+
+Clone the repository 
+```
+* https://github.com/AmirTag/OT-ICNN
+```
+
+
+
 ## Acknowledgments
 ```
 * https://github.com/AmirTag/OT-ICNN

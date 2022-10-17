@@ -111,13 +111,13 @@ def compute_OT_loss(X_data, Y_data, convex_f, convex_g, cuda = True):
 
         f_values.append(.5 * batch.pow(2).sum().item() - convex_f(batch).item())
 
-    return np.array(OT_loss).mean() + np.array(f_values)
+    return np.array(OT_loss).mean() + np.array(f_values).mean()
 
 def compute_w2_Kantorovich(X_data, Y_data, convex_f, convex_g, cuda=True):
 
         Y_loader = torch.utils.data.DataLoader(Y_data,
                                                batch_size=1)
-        g_values = list_()
+        g_values = list()
         for batch, ids, _, _, _ in Y_loader:
 
             if cuda:
@@ -136,18 +136,19 @@ def compute_w2_Kantorovich(X_data, Y_data, convex_f, convex_g, cuda=True):
 
             f_values.append(.5 * batch.pow(2).sum().item() - convex_f(batch).item())
 
-        return np.array(g_values).mean() + np.array(f_values)
+        return np.array(g_values).mean() + np.array(f_values).mean()
 
 
-def compute_w2_Monge(Y_data, convex_f, convex_g, cuda=True):
+def compute_w2_Monge(Y_data, convex_g, cuda=True):
     Y_loader = torch.utils.data.DataLoader(Y_data,
                                            batch_size=1)
-    w2 = list_()
+    w2 = list()
     for y, ids, _, _, _ in Y_loader:
 
         if cuda:
             y = y.cuda()
 
+        y.requires_grad = True
         grad_g_of_y = compute_optimal_transport_map(y, convex_g)
 
         w2.append(.5 * (y-grad_g_of_y).pow(2).sum().item())
@@ -158,28 +159,17 @@ def compute_w2_Monge(Y_data, convex_f, convex_g, cuda=True):
 def compute_convex_conjugate_loss(Y_data, convex_f, convex_g, cuda=True):
     Y_loader = torch.utils.data.DataLoader(Y_data,
                                         batch_size=1)
-    loss = list_()
+    loss = list()
     for y, ids, _, _, _ in Y_loader:
 
         if cuda:
             y = y.cuda()
 
+        y.requires_grad = True
+
         grad_g_of_y = compute_optimal_transport_map(y, convex_g)
         grad_f_grad_g_of_y = compute_optimal_transport_map(grad_g_of_y, convex_f)
 
-        loss.append(.5 * torch.norm(y - grad_f_grad_g_of_y, 2).item())
+        loss.append(torch.norm(y - grad_f_grad_g_of_y, 2).item())
 
-        return np.array(loss).mean()
-
-    X_loader = torch.utils.data.DataLoader(X_data,
-                                           batch_size=1,
-                                           shuffle=True)
-    f_values = list()
-    for batch, ids, _, _ in X_loader:
-
-        if cuda:
-            batch = batch.cuda()
-
-        f_values.append(.5 * batch.pow(2).sum().item() - convex_f(batch).item())
-
-    return np.array(g_values).mean() + np.array(f_values)
+    return np.array(loss).mean()
