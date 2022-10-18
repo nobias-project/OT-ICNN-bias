@@ -7,7 +7,7 @@ data
 results/Experiment*
 results/Results*
 results/training*
-scripts/outputs
+**/outputs
 .DS_Store
 .idea
 

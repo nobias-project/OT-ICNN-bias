@@ -35,7 +35,7 @@ def main(cfg: DictConfig):
                                         transforms.Resize(160)])
 
         df = pd.read_csv("../data/celeba/list_attr_celeba.csv")
-        root_dir = "../data/celeba/Img_folder/Img"
+        root_dir = "../data/celeba/img_align_celeba"
         os.makedirs("../data/{}/{}".format(cfg.dataset, cfg.features),
                     exist_ok=True)
 
@@ -46,10 +46,8 @@ def main(cfg: DictConfig):
             image = io.imread(img_path)
             image = transform(image)
 
-            if args.cuda:
+            if cuda:
                 image.cuda()
-            elif args.mps:
-                image.to("mps")
 
             features_tensor = features(image.reshape(1, *image.shape))
             save_path = "../data/{}/{}/{}.pt".format(cfg.dataset,
