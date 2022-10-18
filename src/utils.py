@@ -228,7 +228,7 @@ def get_storing_paths(
                                                                                 momentum
                                                                                 )
 
-    elif args.optimizer == 'Adam':
+    elif optimizer == 'Adam':
         results_save_path = ('../results/training/{0}/{1}/'
                              '{2}/input_dim_{3}/init_{4}/layers_{5}/neuron_{6}/'
                              'lambda_cvx_{7}_mean_{8}/'
@@ -255,7 +255,7 @@ def get_storing_paths(
                                                                 alpha_rmsprop
                                                                 )
 
-    elif args.optimizer == 'RMSProp':
+    elif optimizer == 'RMSProp':
         results_save_path = ('../results/training/{0}/{1}/'
                              '{2}/input_dim_{3}/init_{4}/layers_{5}/neuron_{6}/'
                              'lambda_cvx_{7}_mean_{8}/'
