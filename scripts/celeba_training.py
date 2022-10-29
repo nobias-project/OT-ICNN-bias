@@ -139,8 +139,8 @@ def main(cfg: DictConfig):
                                                   else p.shape[0]))).float()
 
     if cuda:
-        convex_f.cuda()
-        convex_g.cuda()
+        convex_f = convex_f.cuda()
+        convex_g = convex_g.cuda()
 
     if cfg.settings.verbose:
         logging.info("Created and initialized the convex neural networks 'f' and 'g'")

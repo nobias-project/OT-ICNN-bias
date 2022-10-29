@@ -27,7 +27,7 @@ def main(cfg: DictConfig):
         features.fc = nn.Identity()
 
     if cuda:
-        features.cuda()
+        features = features.cuda()
 
     # load data
     if cfg.dataset == "celeba":
@@ -47,7 +47,7 @@ def main(cfg: DictConfig):
             image = transform(image)
 
             if cuda:
-                image.cuda()
+                image = image.cuda()
 
             features_tensor = features(image.reshape(1, *image.shape))
             save_path = "../data/{}/{}/{}.pt".format(cfg.dataset,
@@ -74,7 +74,7 @@ def main(cfg: DictConfig):
                 image = transform(image)
 
                 if cuda:
-                    image.cuda()
+                    image = image.cuda()
 
                 features_tensor = features(image.reshape(1, *image.shape))
                 save_path = "../data/{}/{}/{}.pt".format(cfg.dataset,

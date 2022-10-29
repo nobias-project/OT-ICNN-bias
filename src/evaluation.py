@@ -151,7 +151,7 @@ def compute_w2_Monge(Y_data, convex_g, cuda=True):
         y.requires_grad = True
         grad_g_of_y = compute_optimal_transport_map(y, convex_g)
 
-        w2.append(.5 * (y-grad_g_of_y).pow(2).sum().item())
+        w2.append(.5 * (y - grad_g_of_y).pow(2).sum().item())
 
     return np.array(w2).mean()
 
