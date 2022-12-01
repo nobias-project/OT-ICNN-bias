@@ -42,10 +42,12 @@ def main(cfg: DictConfig):
     set_random_seeds(cfg.settings.seed)
 
     dataset = cfg.data.dataset_x.split("/")[2]
-    split = cfg.data.dataset_x.split("/")[-1].split(".")[0]
+    split1 = cfg.data.dataset_x.split("/")[-1].split(".")[0]
+    split2 = cfg.data.dataset_y.split("/")[-1].split(".")[0]
     results_save_path, model_save_path = get_storing_paths(
                                                     dataset,
-                                                    split,
+                                                    split1,
+                                                    split2,
                                                     cfg.data.features,
                                                     cfg.iccn.input_dim,
                                                     cfg.iccn.initialization,

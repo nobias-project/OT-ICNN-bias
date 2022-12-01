@@ -180,7 +180,8 @@ def set_random_seeds(seed=0):
 
 def get_storing_paths(
                     dataset,
-                    split,
+                    split1,
+                    split2,
                     features,
                     input_dim,
                     initialization,
@@ -205,12 +206,13 @@ def get_storing_paths(
         full_quadratic_value = "inp"
 
     if optimizer == 'SGD':
-        results_save_path = ('../results/training/{0}/{1}/'
-                             '{2}/input_dim_{3}/init_{4}/layers_{5}/neuron_{6}/'
-                             'lambda_cvx_{7}_mean_{8}/optim_{9}lr_{10}momen_{15}/'
-                             'gen_{11}/batch_{12}/trial_{13}_last_{14}_qudr').format(
+        results_save_path = ('../results/training/{0}/{1}/{2}/'
+                             '{3}/input_dim_{4}/init_{5}/layers_{6}/neuron_{7}/'
+                             'lambda_cvx_{8}_mean_{9}/optim_{10}lr_{11}momen_{16}/'
+                             'gen_{12}/batch_{13}/trial_{14}_last_{15}_qudr').format(
                                                                                 dataset,
-                                                                                split,
+                                                                                split1,
+                                                                                split2,
                                                                                 features,
                                                                                 input_dim,
                                                                                 initialization,
@@ -229,13 +231,14 @@ def get_storing_paths(
                                                                                 )
 
     elif optimizer == 'Adam':
-        results_save_path = ('../results/training/{0}/{1}/'
-                             '{2}/input_dim_{3}/init_{4}/layers_{5}/neuron_{6}/'
-                             'lambda_cvx_{7}_mean_{8}/'
-                             'optim_{9}lr_{10}betas_{15}_{16}/gen_{11}/batch_{12}/'
-                             'trial_{13}_last_{14}_qudr').format(
+        results_save_path = ('../results/training/{0}/{1}/{2}/'
+                             '{3}/input_dim_{4}/init_{5}/layers_{6}/neuron_{7}/'
+                             'lambda_cvx_{8}_mean_{9}/'
+                             'optim_{10}lr_{11}betas_{16}_{17}/gen_{12}/batch_{13}/'
+                             'trial_{14}_last_{15}_qudr').format(
                                                                 dataset,
-                                                                split,
+                                                                split1,
+                                                                split2,
                                                                 features,
                                                                 input_dim,
                                                                 initialization,
@@ -256,13 +259,14 @@ def get_storing_paths(
                                                                 )
 
     elif optimizer == 'RMSProp':
-        results_save_path = ('../results/training/{0}/{1}/'
-                             '{2}/input_dim_{3}/init_{4}/layers_{5}/neuron_{6}/'
-                             'lambda_cvx_{7}_mean_{8}/'
-                             'optim_{9}lr_{10}_moment{15}_alpha{16}/gen_{11}/batch_{12}/'
-                             'trial_{13}_last_{14}_qudr').format(
+        results_save_path = ('../results/training/{0}/{1}/{2}/'
+                             '{3}/input_dim_{4}/init_{5}/layers_{6}/neuron_{7}/'
+                             'lambda_cvx_{8}_mean_{9}/'
+                             'optim_{10}lr_{11}_moment{16}_alpha{17}/gen_{12}/batch_{13}/'
+                             'trial_{14}_last_{15}_qudr').format(
                                                                 dataset,
-                                                                split,
+                                                                split1,
+                                                                split2,
                                                                 features,
                                                                 input_dim,
                                                                 initialization,
