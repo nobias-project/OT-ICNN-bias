@@ -5,6 +5,22 @@ import pandas as pd
 from torch.utils import data
 from skimage import io
 
+class Toy_Dataset(nn.Module):
+
+    def __init__(self, path, ground_truth = 1):
+        super(Toy_Dataset, self).__init__()
+        temp = np.load(path)
+        temp = temp[temp[:,-1] == ground_truth]
+
+        self.X = temp[:, :-1]
+        self.y = temp[:,-1]
+
+    def __len__(self):
+        return self.y.shape[0]
+
+    def __getitem__(self, item):
+        self.X[item]
+        return torch.from_numpy(self.X[item]), self.y[item]
 
 class CelebA(data.Dataset):
     def __init__(self,
