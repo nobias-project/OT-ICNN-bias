@@ -6,6 +6,7 @@ from hydra import initialize, compose
 from torch import nn
 from src.utils import get_iccns
 from src.utils import set_random_seeds
+from src.evaluation import load_iccns
 
 class Dataset(nn.Module):
 
@@ -31,89 +32,6 @@ def compute_optimal_transport_map(y, convex_g):
     grad_g_of_y = torch.autograd.grad(g_of_y, y, create_graph=True)[0]
 
     return grad_g_of_y
-
-def load_iccns(cfg, epoch_to_test):
-
-    dataset = cfg.data.dataset.split("/")[-1].split(".")[0]
-
-    if cfg.training.optimizer == "SGD":
-        results_save_path = ('../results/Experiment3/training/{0}/'
-                             'input_dim_{1}/init_{2}/layers_{3}/neuron_{4}/'
-                             'lambda_cvx_{5}_mean_{6}/optim_{7}lr_{8}momen_{13}/'
-                             'gen_{9}/batch_{10}/trial_{11}_last_{12}_qudr').format(
-            dataset,
-            cfg.iccn.input_dim,
-            cfg.iccn.initialization,
-            cfg.iccn.num_layers,
-            cfg.iccn.num_neuron,
-            cfg.training.lambda_cvx,
-            cfg.training.lambda_mean,
-            cfg.training.optimizer,
-            cfg.training.lr,
-            cfg.training.n_generator_iters,
-            cfg.training.batch_size,
-            cfg.settings.trial,
-            cfg.iccn.full_quadratic,
-            cfg.training.momentum)
-    elif cfg.training.optimizer == "Adam":
-        results_save_path = ('../results/Experiment3/training/{0}/'
-                             'input_dim_{1}/init_{2}/layers_{3}/neuron_{4}/'
-                             'lambda_cvx_{5}_mean_{6}/optim_{7}lr_{8}betas_{13}_{14}/'
-                             'gen_{9}/batch_{10}/trial_{11}_last_{12}_qudr').format(
-            dataset,
-            cfg.iccn.input_dim,
-            cfg.iccn.initialization,
-            cfg.iccn.num_layers,
-            cfg.iccn.num_neuron,
-            cfg.training.lambda_cvx,
-            cfg.training.lambda_mean,
-            cfg.training.optimizer,
-            cfg.training.lr,
-            cfg.training.n_generator_iters,
-            cfg.training.batch_size,
-            cfg.settings.trial,
-            cfg.iccn.full_quadratic,
-            cfg.training.beta1_adam,
-            cfg.training.beta2_adam)
-    elif cfg.training.optimizer == "RMSProp":
-        results_save_path = ('../results/Experiment3/training/{0}/'
-                             'input_dim_{1}/init_{2}/layers_{3}/neuron_{4}/'
-                             'lambda_cvx_{5}_mean_{6}/optim_{7}lr_{8}momen{13}_alpha{14}/'
-                             'gen_{9}/batch_{10}/trial_{11}_last_{12}_qudr').format(
-            dataset,
-            cfg.iccn.input_dim,
-            cfg.iccn.initialization,
-            cfg.iccn.num_layers,
-            cfg.iccn.num_neuron,
-            cfg.training.lambda_cvx,
-            cfg.training.lambda_mean,
-            cfg.training.optimizer,
-            cfg.training.lr,
-            cfg.training.n_generator_iters,
-            cfg.training.batch_size,
-            cfg.settings.trial,
-            cfg.iccn.full_quadratic,
-            cfg.training.momentum,
-            cfg.training.alpha_rmsprop)
-
-    model_save_path = results_save_path + '/storing_models'
-
-    convex_f, convex_g = get_iccns(
-        cfg.iccn.num_layers,
-        cfg.iccn.full_quadratic,
-        cfg.iccn.input_dim,
-        cfg.iccn.num_neuron,
-        cfg.iccn.activation)
-
-    convex_f.load_state_dict(
-        torch.load(model_save_path + '/convex_f_epoch_{}.pt'.format(epoch_to_test)))
-    convex_g.load_state_dict(
-        torch.load(model_save_path + '/convex_g_epoch_{}.pt'.format(epoch_to_test)))
-
-    convex_f.eval()
-    convex_g.eval()
-
-    return convex_f, convex_g
 
 def compute_OT_loss(X_data, Y_data, convex_f, convex_g, cuda = True):
 
@@ -156,7 +74,7 @@ def compute_Kantorovich_potential(x, convex_f):
 
 def main():
     with initialize(version_base=None,
-                    config_path="../scripts/outputs/{}/.hydra".format(args.config)):
+                    config_path="../results/training/toy/{}/.hydra".format(args.config)):
 
         set_random_seeds(cfg.settings.seed)
 
@@ -175,7 +93,10 @@ def main():
             ground_truth=1)
 
         # load iccns
-        convex_f, convex_g = load_iccns(cfg, args.epoch)
+        results_save_path = "../results/training/toy/{}".format(args.config)
+        convex_f, convex_g = load_iccns(results_save_path,
+                                        cfg,
+                                        args.epoch)
 
 
         wasserstein = compute_OT_loss(X_data, Y_data, convex_f, convex_g, cuda)
@@ -194,7 +115,7 @@ def main():
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Experiment1')
+    parser = argparse.ArgumentParser(description='Experiment3')
 
     parser.add_argument('--config',
                         type=str,

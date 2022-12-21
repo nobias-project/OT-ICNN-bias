@@ -1,3 +1,6 @@
+hydra:
+  run:
+    dir: "../results/training/toy/${now:%Y-%m-%d}/${now:%H-%M-%S}"
 
 data:
   dataset: "../data/toy/circles_plus.npy"

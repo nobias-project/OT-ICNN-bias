@@ -1,3 +1,6 @@
+hydra:
+  run:
+    dir: "../results/training/celeba/${now:%Y-%m-%d}/${now:%H-%M-%S}"
 
 data:
   dataset_x: "../data/celeba/experiment1_Male_Wearing_Necktie_60.csv"

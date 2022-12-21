@@ -60,75 +60,15 @@ def main(cfg: DictConfig):
 
     set_random_seeds(cfg.settings.seed)
 
-    dataset = cfg.data.dataset.split("/")[-1].split(".")[0]
+    # get hydra config
+    hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
 
-    if cfg.training.optimizer == "SGD":
-        results_save_path = ('../results/Experiment3/training/{0}/'
-                             'input_dim_{1}/init_{2}/layers_{3}/neuron_{4}/'
-                             'lambda_cvx_{5}_mean_{6}/optim_{7}lr_{8}momen_{13}/'
-                             'gen_{9}/batch_{10}/trial_{11}_last_{12}_qudr').format(
-                                                        dataset,
-                                                        cfg.iccn.input_dim,
-                                                        cfg.iccn.initialization,
-                                                        cfg.iccn.num_layers,
-                                                        cfg.iccn.num_neuron,
-                                                        cfg.training.lambda_cvx,
-                                                        cfg.training.lambda_mean,
-                                                        cfg.training.optimizer,
-                                                        cfg.training.lr,
-                                                        cfg.training.n_generator_iters,
-                                                        cfg.training.batch_size,
-                                                        cfg.settings.trial,
-                                                        cfg.iccn.full_quadratic,
-                                                        cfg.training.momentum)
-    elif cfg.training.optimizer == "Adam":
-        results_save_path = ('../results/Experiment3/training/{0}/'
-                             'input_dim_{1}/init_{2}/layers_{3}/neuron_{4}/'
-                             'lambda_cvx_{5}_mean_{6}/optim_{7}lr_{8}betas_{13}_{14}/'
-                             'gen_{9}/batch_{10}/trial_{11}_last_{12}_qudr').format(
-                                                                dataset,
-                                                                cfg.iccn.input_dim,
-                                                                cfg.iccn.initialization,
-                                                                cfg.iccn.num_layers,
-                                                                cfg.iccn.num_neuron,
-                                                                cfg.training.lambda_cvx,
-                                                                cfg.training.lambda_mean,
-                                                                cfg.training.optimizer,
-                                                                cfg.training.lr,
-                                                                cfg.training.n_generator_iters,
-                                                                cfg.training.batch_size,
-                                                                cfg.settings.trial,
-                                                                cfg.iccn.full_quadratic,
-                                                                cfg.training.beta1_adam,
-                                                                cfg.training.beta2_adam)
-    elif cfg.training.optimizer == "RMSProp":
-        results_save_path = ('../results/Experiment3/training/{0}/'
-                             'input_dim_{1}/init_{2}/layers_{3}/neuron_{4}/'
-                             'lambda_cvx_{5}_mean_{6}/optim_{7}lr_{8}momen{13}_alpha{14}/'
-                             'gen_{9}/batch_{10}/trial_{11}_last_{12}_qudr').format(
-                                                                    dataset,
-                                                                    cfg.iccn.input_dim,
-                                                                    cfg.iccn.initialization,
-                                                                    cfg.iccn.num_layers,
-                                                                    cfg.iccn.num_neuron,
-                                                                    cfg.training.lambda_cvx,
-                                                                    cfg.training.lambda_mean,
-                                                                    cfg.training.optimizer,
-                                                                    cfg.training.lr,
-                                                                    cfg.training.n_generator_iters,
-                                                                    cfg.training.batch_size,
-                                                                    cfg.settings.trial,
-                                                                    cfg.iccn.full_quadratic,
-                                                                    cfg.training.momentum,
-                                                                    cfg.training.alpha_rmsprop)
-
-    model_save_path = results_save_path + '/storing_models'
+    # results save paths
+    results_save_path = hydra_cfg.run.dir
+    model_save_path = os.path.join(results_save_path, "storing_models")
 
     os.makedirs(model_save_path, exist_ok=True)
 
-    setup_logging(os.path.join(results_save_path, 'log.txt'))
-    results_file = os.path.join(results_save_path, 'results.%s')
-    results = ResultsLog(results_file % 'csv', results_file % 'html')
     if cfg.settings.verbose:
         logging.info("saving to %s \n", results_save_path)
         logging.debug("run arguments: %s", cfg)
@@ -345,13 +285,6 @@ def main(cfg: DictConfig):
         w_2_loss_value_epoch /= len(train_loader)
         g_OT_loss_value_epoch /= len(train_loader)
         g_Constraint_loss_value_epoch /= len(train_loader)
-
-        results.add(epoch=epoch,
-                    w2_loss_train_samples=w_2_loss_value_epoch,
-                    g_OT_train_loss=g_OT_loss_value_epoch,
-                    g_Constraint_loss=g_Constraint_loss_value_epoch)
-
-        results.save()
 
         return (w_2_loss_value_epoch,
                 g_OT_loss_value_epoch,

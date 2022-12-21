@@ -22,6 +22,9 @@ def main():
         cfg = compose(config_name="config")
         cuda = not cfg.settings.no_cuda and torch.cuda.is_available()
 
+        # results save path
+        results_save_path = "../results/training/celeba/{}".format(args.config)
+
         # data
         X_data, Y_data = load_data(cfg)
 
@@ -29,7 +32,9 @@ def main():
         df_X = pd.read_csv(cfg.data.dataset_x)
 
         # load iccns
-        convex_f, convex_g = load_iccns(cfg, args.epoch)
+        convex_f, convex_g = load_iccns(results_save_path,
+                                        cfg,
+                                        args.epoch)
 
 
         wasserstein = compute_OT_loss(X_data, Y_data, convex_f, convex_g, cuda)

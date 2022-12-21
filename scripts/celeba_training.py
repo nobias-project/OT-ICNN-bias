@@ -14,9 +14,8 @@ from matplotlib import pyplot as plt
 from scipy.stats import truncnorm
 
 from src.optimal_transport_modules.icnn_modules import *
-from src.utils import set_random_seeds, get_storing_paths, setup_logging
+from src.utils import set_random_seeds, setup_logging
 from src.utils import ResultsLog, get_iccns, get_optimizers
-# matplotlib.use('tkagg')
 
 
 # useful functions
@@ -42,35 +41,16 @@ def main(cfg: DictConfig):
     set_random_seeds(cfg.settings.seed)
 
     dataset = cfg.data.dataset_x.split("/")[2]
-    split1 = cfg.data.dataset_x.split("/")[-1].split(".")[0]
-    split2 = cfg.data.dataset_y.split("/")[-1].split(".")[0]
-    results_save_path, model_save_path = get_storing_paths(
-                                                    dataset,
-                                                    split1,
-                                                    split2,
-                                                    cfg.data.features,
-                                                    cfg.iccn.input_dim,
-                                                    cfg.iccn.initialization,
-                                                    cfg.iccn.num_layers,
-                                                    cfg.iccn.num_neuron,
-                                                    cfg.training.lambda_cvx,
-                                                    cfg.training.lambda_mean,
-                                                    cfg.training.optimizer,
-                                                    cfg.training.lr,
-                                                    cfg.training.n_generator_iters,
-                                                    cfg.training.batch_size,
-                                                    cfg.settings.trial,
-                                                    cfg.iccn.full_quadratic,
-                                                    cfg.training.momentum,
-                                                    cfg.training.beta1_adam,
-                                                    cfg.training.beta2_adam,
-                                                    cfg.training.alpha_rmsprop)
+
+    # get hydra config
+    hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
+
+    # results save paths
+    results_save_path = hydra_cfg.run.dir
+    model_save_path = os.path.join(results_save_path, "storing_models")
 
     os.makedirs(model_save_path, exist_ok=True)
 
-    setup_logging(os.path.join(results_save_path, 'log.txt'))
-    results_file = os.path.join(results_save_path, 'results.%s')
-    results = ResultsLog(results_file % 'csv', results_file % 'html')
     if cfg.settings.verbose:
         logging.info("saving to %s \n", results_save_path)
         logging.debug("run arguments: %s", cfg)
@@ -291,13 +271,6 @@ def main(cfg: DictConfig):
         w_2_loss_value_epoch /= len(train_loader)
         g_OT_loss_value_epoch /= len(train_loader)
         g_Constraint_loss_value_epoch /= len(train_loader)
-
-        results.add(epoch=epoch,
-                    w2_loss_train_samples=w_2_loss_value_epoch,
-                    g_OT_train_loss=g_OT_loss_value_epoch,
-                    g_Constraint_loss=g_Constraint_loss_value_epoch)
-
-        results.save()
 
         return (w_2_loss_value_epoch,
                 g_OT_loss_value_epoch,
