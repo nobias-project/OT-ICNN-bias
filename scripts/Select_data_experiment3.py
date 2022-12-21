@@ -1,138 +1,29 @@
 import numpy as np
-import pandas as pd
+import sklearn.datasets
 import random
 
 # set random seeds
-seed = 10
+seed = 39
 
 np.random.seed(seed)
 random.seed(seed)
 
+size = 5000
 
-# function that assembles the data
-def select_data(df,
-                feature1="Male",
-                feature2="Wearing_Necktie"):
-    """
-    This function takes a dataframe as an input and sample four datasets where
-    feature1 == 1 and respectively 90%, 60%, 30% and 10% of rows with
-    feature1 == 1 have also feature2 == 1.
+blobs, y_blobs = sklearn.datasets.make_blobs(n_samples=size, centers = [[0,0],[ 4,4]], cluster_std=1.)
+np.save("../data/toy/blobs.npy", np.c_[blobs, y_blobs])
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DESCRIPTION.
-    feature1 : str, optional
-        Sensitive attribute. The default is "Male".
-    feature2 : str, optional
-        Other attribute. The default is "Wearing_Necktie".
+moons, y_moons = sklearn.datasets.make_moons(n_samples=size)
+np.save("../data/toy/moons.npy", np.c_[moons, y_moons])
 
-    Returns
-    -------
-    None.
+circles, y_circles = sklearn.datasets.make_circles(n_samples=size)
+circles *= 10
+np.save("../data/toy/circles.npy", np.c_[circles, y_circles])
 
-    """
+circles_plus, y_circles_plus =sklearn.datasets.make_circles(n_samples=(size//2 -1000, size//2))
+circles_plus *= 10
+gauss = np.random.multivariate_normal([-4, 4], .5*np.identity(2), size=1000)
 
-    # select features
-    df_male_no_tie = df[(df[feature1] == 1) & (df[feature2] == -1)]
-    df_male_tie = df[(df[feature1] == 1) & (df[feature2] == 1)]
-
-    df_female = df[(df[feature1] == -1)]
-
-    len_male_tie = len(df_male_tie)
-
-    for percentage in [.9, .6, .3, .1]:
-
-        to_concat_male = [
-            df_male_tie.sample(round(percentage*len_male_tie)),
-            df_male_no_tie.sample(round((1-percentage)*len_male_tie))
-            ]
-
-        final_male = pd.concat(to_concat_male)
-
-        path = "../data/celeba/experiment3_Male_{}_{}.csv".format(
-                                                            feature2,
-                                                            int(percentage*100)
-                                                            )
-        final_male.to_csv(path)
-
-    final_female = df_female.sample(len_male_tie)
-
-    path = "../data/celeba/experiment3_Female_{}.csv".format(feature2)
-    final_female.to_csv(path)
-
-
-def select_data_female(df,
-                       feature1="Male",
-                       feature2="Wearing_Necktie"):
-    """
-    This function takes a dataframe as an input and sample four datastes where
-    feature1 == -1 and respectively 90%, 60%, 30% and 10% of rows with
-    feature1 == -1 have also feature2 == 1.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DESCRIPTION.
-    feature1 : str, optional
-        Sensitive attribute. The default is "Male".
-    feature2 : str, optional
-        Other attribute. The default is "Wearing_Necktie".
-
-    Returns
-    -------
-    None.
-
-    """
-
-    # select features
-    df_female_no_tie = df[(df[feature1] == -1) & (df[feature2] == -1)]
-    df_female_tie = df[(df[feature1] == -1) & (df[feature2] == 1)]
-
-    df_male = df[(df[feature1] == 1)]
-
-    len_female_tie = len(df_female_tie)
-
-    for percentage in [.9, .6, .3, .1]:
-
-        to_concat_female = [
-            df_female_tie.sample(round(percentage*len_female_tie)),
-            df_female_no_tie.sample(round((1-percentage)*len_female_tie))
-            ]
-
-        final_female = pd.concat(to_concat_female)
-
-        path = "../data/celeba/experiment3_Female_{}_{}.csv".format(
-                                                            feature2,
-                                                            int(percentage*100)
-                                                            )
-        final_female.to_csv(path)
-
-    final_male = df_male.sample(len_female_tie)
-
-    path = "../data/celeba/experiment3_Male_{}.csv".format(feature2)
-    final_male.to_csv(path)
-
-
-# path to CelebA attributes' .csv
-csv_path = "../data/celeba/list_attr_celeba.csv"
-partition_path = "../data/celeba/list_eval_partition.csv"
-
-# load .csv as dataframes
-df = pd.read_csv(csv_path, index_col=None)
-df_part = pd.read_csv(partition_path)
-
-# we merge with the partition dataset to keep the test set outside the samples
-new_df = pd.merge(df, df_part, how="left", on="image_id")
-
-# select and save the data
-select_data(new_df[new_df["partition"]==0])
-select_data(new_df[new_df["partition"]==0],
-                   feature2="Eyeglasses")
-select_data(new_df[new_df["partition"]==0],
-                   feature2="Wearing_Hat")
-select_data(new_df[new_df["partition"]==0],
-                   feature2="Smiling")
-
-path_test = "../data/celeba/experiment3_test.csv"
-new_df[new_df["partition"]==1].to_csv(path_test)
+circles_plus = np.concatenate([circles_plus, gauss])
+y_circles_plus = np.concatenate([y_circles_plus, np.ones(1000)])
+np.save("../data/toy/circles_plus.npy", np.c_[circles_plus, y_circles_plus])

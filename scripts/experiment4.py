@@ -33,7 +33,7 @@ def main():
 
 
         wasserstein = compute_OT_loss(X_data, Y_data, convex_f, convex_g, cuda)
-        with open("../results/experiment1_wasserstein.tsv", "a") as f:
+        with open("../results/experiment4_wasserstein.tsv", "a") as f:
             f.write(cfg.data.dataset_x + "\t" +
                     cfg.data.dataset_y + "\t" +
                     str(wasserstein) + "\n")
