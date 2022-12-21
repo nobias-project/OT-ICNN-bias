@@ -107,10 +107,15 @@ class CelebA_Features_Kernel(data.Dataset):
                                 )
         x = torch.load(img_path)
 
-        m = torch.distributions.MultivariateNormal(
-                                        x.reshape(-1),
-                                        self.var*torch.eye(x.shape[1]))
-        sample = m.sample()
+        if self.var != 0:
+
+            m = torch.distributions.MultivariateNormal(
+                                            x.reshape(-1),
+                                            self.var*torch.eye(x.shape[1]))
+
+            sample = m.sample()
+        else:
+            sample = x.reshape(-1)
 
         return (sample.detach(),
                 idx,

@@ -5,10 +5,9 @@ from src.optimal_transport_modules.icnn_modules import *
 
 from src.utils import get_storing_paths, get_iccns
 import numpy as np
-import pandas as pd
 import torch.utils.data
 import src.datasets
-
+import os
 
 def compute_optimal_transport_map(y, convex_g):
 
@@ -17,7 +16,6 @@ def compute_optimal_transport_map(y, convex_g):
     grad_g_of_y = torch.autograd.grad(g_of_y, y, create_graph=True)[0]
 
     return grad_g_of_y
-
 
 def load_data(cfg):
     dataset = cfg.data.dataset_x.split("/")[2]
@@ -36,33 +34,9 @@ def load_data(cfg):
     return X_data, Y_data
 
 
-def load_iccns(cfg, epoch_to_test):
+def load_iccns(results_save_path, cfg, epoch_to_test):
 
-    dataset = cfg.data.dataset_x.split("/")[2]
-    split1 = cfg.data.dataset_x.split("/")[-1].split(".")[0]
-    split2 = cfg.data.dataset_y.split("/")[-1].split(".")[0]
-
-    results_save_path, model_save_path = get_storing_paths(
-        dataset,
-        split1,
-        split2,
-        cfg.data.features,
-        cfg.iccn.input_dim,
-        cfg.iccn.initialization,
-        cfg.iccn.num_layers,
-        cfg.iccn.num_neuron,
-        cfg.training.lambda_cvx,
-        cfg.training.lambda_mean,
-        cfg.training.optimizer,
-        cfg.training.lr,
-        cfg.training.n_generator_iters,
-        cfg.training.batch_size,
-        cfg.settings.trial,
-        cfg.iccn.full_quadratic,
-        cfg.training.momentum,
-        cfg.training.beta1_adam,
-        cfg.training.beta2_adam,
-        cfg.training.alpha_rmsprop)
+    model_save_path = os.path.join(results_save_path, "storing_models")
 
     convex_f, convex_g = get_iccns(
         cfg.iccn.num_layers,

@@ -4,9 +4,7 @@ data
 **/.ipynb_checkpoints/
 .spyproject
 *.drawio
-results/Experiment*
-results/Results*
-results/training*
+results
 **/outputs
 .DS_Store
 .idea
