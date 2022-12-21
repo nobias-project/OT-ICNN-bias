@@ -72,11 +72,12 @@ python ./celeba_training.py training.epochs=50 training.optimizer="RMSProp" sett
 
 ```
 
-7. Hydra stores the configuration used for each run into folders named ```./scripts/outputs/YYYY-MM-DD/HH-MM-SS/.hydra``` You can test the goodness of the training with your configuration by running pytest. You need to specify the epoch checkpoint you want to test as well.  
+7. Hydra stores the configuration used for each run into folders named ```./results/training/DATASET_NAME/YYYY-MM-DD/HH-MM-SS/.hydra``` You can test the goodness of the training with your configuration by running pytest. 
+You need to specify the epoch checkpoint you want to test as well.  
 ```console
 cd ../tests
 
-pytest --config='YYYY-MM-DD/HH-MM-SS/' --epoch_to_test=40 --verbose
+pytest --config='YYYY-MM-DD/HH-MM-SS/' --dataset='celeba' --epoch_to_test=40 --verbose
 ```
 
 
