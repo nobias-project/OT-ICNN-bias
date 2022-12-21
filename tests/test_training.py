@@ -11,26 +11,31 @@ def config(request):
     return request.config.getoption('--config')
 
 @pytest.fixture(scope="session")
+def dataset(request):
+    return request.config.getoption('--dataset')
+
+@pytest.fixture(scope="session")
 def epoch_to_test(request):
     return request.config.getoption('--epoch_to_test')
 
 @pytest.fixture(scope="session")
-def convex_f_and_convex_g(config, epoch_to_test):
-    with initialize(version_base=None, config_path="../scripts/outputs/{}/.hydra".format(config)):
+def convex_f_and_convex_g(dataset, config, epoch_to_test):
+    with initialize(version_base=None, config_path="../results/training/{}/{}/.hydra".format(dataset, config)):
         cfg = compose(config_name="config")
-        convex_f, convex_g = load_iccns(cfg, epoch_to_test)
+        results_save_path ="../results/training/{}/{}".format(dataset, config)
+        convex_f, convex_g = load_iccns(results_save_path, cfg, epoch_to_test)
         return [convex_f, convex_g]
 
 @pytest.fixture(scope="session")
-def data_x_and_data_y(config):
-    with initialize(version_base=None, config_path="../scripts/outputs/{}/.hydra".format(config)):
+def data_x_and_data_y(dataset, config):
+    with initialize(version_base=None, config_path="../results/training/{}/{}/.hydra".format(dataset, config)):
         cfg = compose(config_name="config")
         X_data, Y_data = load_data(cfg)
         return [X_data, Y_data]
 
 @pytest.fixture(scope="session")
-def cuda(config):
-    with initialize(version_base=None, config_path="../scripts/outputs/{}/.hydra".format(config)):
+def cuda(dataset, config):
+    with initialize(version_base=None, config_path="../results/training/{}/{}/.hydra".format(dataset, config)):
         cfg = compose(config_name="config")
         cuda = not cfg.settings.no_cuda and torch.cuda.is_available()
 
