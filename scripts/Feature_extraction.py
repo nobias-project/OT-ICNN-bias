@@ -9,8 +9,10 @@ import pandas as pd
 from torchvision import transforms
 from torchvision.models import resnet18, ResNet18_Weights
 from torchvision.models import resnet50, ResNet50_Weights
+from facenet_pytorch import InceptionResnetV1
 from skimage import io
 from PIL import Image
+from src.models import AE
 
 @hydra.main(version_base=None, config_path="config", config_name="feature_extraction_config")
 def main(cfg: DictConfig):
@@ -26,13 +28,31 @@ def main(cfg: DictConfig):
         features = resnet50(weights=ResNet50_Weights.IMAGENET1K_V1).eval()
         features.fc = nn.Identity()
 
+    elif cfg.features == "facenet":
+        features = InceptionResnetV1(pretrained='vggface2').eval()
+
+    elif cfg.features == "autoencoder":
+        path_ae = "../results/autoencoder/autoencoder_19.pth"
+        features = AE(nc=3, ngf=128, ndf=128, latent_variable_size=512)
+        features.load_state_dict(torch.load(path_ae))
+        features.eval()
+
+
     if cuda:
         features = features.cuda()
 
     # load data
     if cfg.dataset == "celeba":
-        transform = transforms.Compose([transforms.ToTensor(),
-                                        transforms.Resize(160)])
+        if cfg.features == "autoencoder":
+            transform = transforms.Compose([
+                               transforms.ToTensor(),
+                               transforms.Resize(128),
+                               transforms.CenterCrop(128),
+                               transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                                ])
+        else:
+            transform = transforms.Compose([transforms.ToTensor(),
+                                            transforms.Resize(160)])
 
         df = pd.read_csv("../data/celeba/list_attr_celeba.csv")
         root_dir = "../data/celeba/img_align_celeba"
@@ -49,7 +69,11 @@ def main(cfg: DictConfig):
             if cuda:
                 image = image.cuda()
 
-            features_tensor = features(image.reshape(1, *image.shape))
+            if cfg.features == "autoencoder":
+                features_tensor = features(image.reshape(1, *image.shape))
+            else:
+                features_tensor = features(image.reshape(1, *image.shape))
+
             save_path = "../data/{}/{}/{}.pt".format(cfg.dataset,
                                                      cfg.features,
                                                      df.loc[i, "image_id"][:-4])

@@ -52,9 +52,15 @@ def main():
 
         tsv_path = "../results/Experiment{}/wasserstein.tsv".format(args.experiment)
         with open(tsv_path, "a") as f:
-            f.write(cfg.data.dataset_x + "\t" +
-                    cfg.data.dataset_y + "\t" +
-                    str(wasserstein) + "\n")
+            if args.experiment != 3:
+                f.write(cfg.data.dataset_x + "\t" +
+                        cfg.data.dataset_y + "\t" +
+                        cfg.data.features + "\t" +
+                        str(wasserstein) + "\n")
+            else:
+                f.write(cfg.data.dataset_x + "\t" +
+                        cfg.data.dataset_y + "\t" +
+                        str(wasserstein) + "\n")
 
         X_loader = torch.utils.data.DataLoader(X_data,
                                            batch_size=1,
@@ -65,7 +71,7 @@ def main():
                 df_X.loc[id, "Kantorovich_potential"] = compute_Kantorovich_potential(x, convex_f)
 
             df_X.to_csv(cfg.data.dataset_x, index=False)
-            
+
         else:
             potentials = list()
             for x, _ in X_loader:
