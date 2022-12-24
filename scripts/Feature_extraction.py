@@ -70,7 +70,7 @@ def main(cfg: DictConfig):
                 image = image.cuda()
 
             if cfg.features == "autoencoder":
-                features_tensor = features(image.reshape(1, *image.shape))
+                features_tensor = features.encode(image.reshape(1, *image.shape))
             else:
                 features_tensor = features(image.reshape(1, *image.shape))
 
