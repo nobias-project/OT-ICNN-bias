@@ -3,7 +3,7 @@ from __future__ import print_function
 import random
 from src.optimal_transport_modules.icnn_modules import *
 
-from src.utils import get_storing_paths, get_iccns
+from src.utils import get_iccns
 import numpy as np
 import torch.utils.data
 import src.datasets

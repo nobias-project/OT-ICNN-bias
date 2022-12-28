@@ -17,10 +17,11 @@ def main():
     with initialize(version_base=None,
                     config_path="../results/training/{}/{}/.hydra".format(args.dataset, args.config)):
 
-        set_random_seeds(cfg.settings.seed)
-
         # load config
         cfg = compose(config_name="config")
+
+        set_random_seeds(cfg.settings.seed)
+
         cuda = not cfg.settings.no_cuda and torch.cuda.is_available()
 
         # data
@@ -66,9 +67,10 @@ def main():
                                            batch_size=1,
                                            shuffle=True)
         if args.experiment != 3:
-            df_X["Kantorovich_potential"] = [np.NaN]*len(df_X)
+            col_name = "{}_Kantorovich_potential".format(cfg.data.features)
+            df_X[col_name] = [np.NaN]*len(df_X)
             for x, id, _, _ in  X_loader:
-                df_X.loc[id, "Kantorovich_potential"] = compute_Kantorovich_potential(x, convex_f)
+                df_X.loc[id, col_name] = compute_Kantorovich_potential(x, convex_f)
 
             df_X.to_csv(cfg.data.dataset_x, index=False)
 

@@ -5,7 +5,7 @@ import pandas as pd
 from torch.utils import data
 from skimage import io
 
-class Toy_Dataset(nn.Module):
+class Toy_Dataset(data.Dataset):
 
     def __init__(self, path, ground_truth = 1):
         super(Toy_Dataset, self).__init__()
