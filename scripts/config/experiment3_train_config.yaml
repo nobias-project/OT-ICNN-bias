@@ -15,17 +15,17 @@ iccn:
 
 training:
   batch_size: 30
-  epochs: 80
+  epochs: 30
   n_generator_iters: 5
-  optimizer: "SGD"
-  lr: 1e-5
+  optimizer: "RMSProp"
+  lr: 1e-4
   momentum: 0.5
   alpha_rmsprop: 0.99
   beta1_adam: 0.5
   beta2_adam: 0.99
   lambda_cvx: 0.5
   lambda_mean: 0.0
-  lr_schedule: 8
+  lr_schedule: 20
 
 settings:
   trial: 1

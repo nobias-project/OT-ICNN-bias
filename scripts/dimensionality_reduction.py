@@ -6,11 +6,9 @@ import pandas as pd
 
 from pathlib import Path
 from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
+from sklearn.manifold import TSNE, Isomap, SpectralEmbedding, MDS
 
-from src.evaluation import compute_OT_loss
 from src.utils import set_random_seeds
-from src.datasets import Toy_Dataset
 
 def load_data_as_numpy(dataset, features):
     path = Path("../data/{}/{}".format(dataset, features))
@@ -19,9 +17,8 @@ def load_data_as_numpy(dataset, features):
 
     return os.listdir(path), array
 
-
-def save_data_as_tensor(dataset, features, method, files, array):
-    path = Path("../data/{}/{}_reduced_{}".format(dataset, features, method))
+def save_data_as_tensor(dataset, features, method, dimension, files, array):
+    path = Path("../data/{}/{}_reduced_{}_{}".format(dataset, features, method, dimension))
     os.makedirs(path, exist_ok=True)
 
     for file, row in zip(files, array):
@@ -31,12 +28,22 @@ def save_data_as_tensor(dataset, features, method, files, array):
 
 
 def main():
+
+    # set random seeds
+    set_random_seeds(98)
+
     files, space = load_data_as_numpy(args.dataset, args.features)
 
     if args.method == "PCA":
-        method = PCA(n_components=3)
+        method = PCA(n_components=args.dimension)
     elif args.method == "TSNE":
-        method = TSNE(n_components=3)
+        method = TSNE(n_components=args.dimension)
+    elif args.method == "Isomap":
+        method = Isomap(n_components=args.dimension)
+    elif args.method == "SpectralEmbedding":
+        method = SpectralEmbedding(n_components=args.dimension)
+    elif args.method == "MDS":
+        method = MDS(n_components=args.dimension)
     else:
         raise NotImplementedError("Not implemented for this method")
 
@@ -44,6 +51,7 @@ def main():
     save_data_as_tensor(args.dataset,
                         args.features,
                         args.method,
+                        args.dimension,
                         files,
                         space)
 
@@ -54,7 +62,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--features',
                         type=str,
-                        default='resnet18',
+                        default='facenet',
                         help='features to be reduce')
 
     parser.add_argument('--dataset',
@@ -64,8 +72,13 @@ if __name__ == "__main__":
 
     parser.add_argument('--method',
                         type=str,
-                        default="TSNE",
+                        default="PCA",
                         help='dimensionality reduction method')
+
+    parser.add_argument('--dimension',
+                        type=int,
+                        default=3,
+                        help='dimension')
 
     args = parser.parse_args()
 

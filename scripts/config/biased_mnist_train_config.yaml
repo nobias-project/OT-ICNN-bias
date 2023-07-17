@@ -1,0 +1,37 @@
+hydra:
+  run:
+    dir: "../results/training/biased_mnist/${now:%Y-%m-%d}/${now:%H-%M-%S}"
+
+data:
+  bias: "0.99"
+  features: "resnet18"
+  kernel_variance: 0.001
+
+iccn:
+  input_dim: 512
+  num_neuron: 512
+  num_layers: 4
+  full_quadratic: False
+  activation: "leaky_relu"
+  initialization: "trunc_inv_sqrt"
+
+training:
+  batch_size: 30
+  epochs: 40
+  n_generator_iters: 5
+  optimizer: "SGD"
+  lr: 1e-5
+  momentum: 0.5
+  alpha_rmsprop: 0.99
+  beta1_adam: 0.5
+  beta2_adam: 0.99
+  lambda_cvx: 0.5
+  lambda_mean: 0.0
+  lr_schedule: 8
+
+settings:
+  trial: 1
+  log_interval: 10
+  seed: 1
+  no_cuda: False
+  verbose: True

@@ -2,6 +2,7 @@ import hydra
 from omegaconf import DictConfig
 
 import os
+import shutil
 import torch
 import torch.nn as nn
 import pandas as pd
@@ -105,6 +106,50 @@ def main(cfg: DictConfig):
                                                          cfg.features,
                                                          name[:-4])
                 torch.save(features_tensor, save_path)
+
+    if cfg.dataset == "biased-mnist":
+
+        if cfg.features == "resnet18":
+            transform = transforms.Compose([transforms.ToTensor(),
+                                            transforms.Resize(160)])
+        else:
+            raise(NotImplementedError)
+
+        root_dir = "../data/biased_mnist"
+        directories = ["full/test",
+                       "full_0.1/trainval",
+                       "full_0.5/trainval",
+                       "full_0.75/trainval",
+                       "full_0.9/trainval",
+                       "full_0.95/trainval",
+                       "full_0.99/trainval"]
+
+        for dir in directories:
+            src_dir = os.path.join(root_dir, dir)
+            trg_dir = os.path.join(root_dir,
+                                   "{}_features".format(cfg.features),
+                                   dir)
+
+            os.makedirs(trg_dir,
+                        exist_ok=True)
+
+            images = os.listdir(src_dir)
+            for name in images:
+                if name[-4:] == ".jpg":
+                    img_path = os.path.join(src_dir,
+                                            name)
+
+                    image = Image.open(img_path)
+                    image = image.convert("RGB")
+                    image = transform(image)
+
+                    if cuda:
+                        image = image.cuda()
+
+                    features_tensor = features(image.reshape(1, *image.shape))
+                    save_path = os.path.join(trg_dir,
+                                             "{}.pt".format(name[:-4]))
+                    torch.save(features_tensor, save_path)
 
 if __name__ == "__main__":
     main()

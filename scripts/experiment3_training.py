@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 from scipy.stats import truncnorm
 
 from src.optimal_transport_modules.icnn_modules import *
-from src.utils import set_random_seeds, get_storing_paths, setup_logging
+from src.utils import set_random_seeds, setup_logging
 from src.utils import ResultsLog, get_iccns, get_optimizers
 # matplotlib.use('tkagg')
 

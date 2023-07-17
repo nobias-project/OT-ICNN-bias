@@ -67,8 +67,9 @@ def main():
                                            batch_size=1,
                                            shuffle=True)
         if args.experiment != 3:
-            col_name = "{}_Kantorovich_potential".format(cfg.data.features)
+            col_name = "{}_{}_KP".format(cfg.data.features, args.config.split("/")[1])
             df_X[col_name] = [np.NaN]*len(df_X)
+
             for x, id, _, _ in  X_loader:
                 df_X.loc[id, col_name] = compute_Kantorovich_potential(x, convex_f)
 

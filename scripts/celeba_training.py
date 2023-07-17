@@ -38,6 +38,7 @@ def main(cfg: DictConfig):
 
     cuda = not cfg.settings.no_cuda and torch.cuda.is_available()
 
+    # random seeds
     set_random_seeds(cfg.settings.seed)
 
     dataset = cfg.data.dataset_x.split("/")[2]
@@ -60,6 +61,27 @@ def main(cfg: DictConfig):
     ################################################################
     # Data stuff
 
+    if dataset == "celeba":
+        X_data = src.datasets.CelebA_Features(
+                        cfg.data.dataset_x,
+                        "../data/{}/{}".format(dataset,
+                                               cfg.data.features))
+
+        train_loader = torch.utils.data.DataLoader(
+                                X_data,
+                                batch_size=cfg.training.batch_size,
+                                shuffle=True,
+                                **kwargs)
+        if cfg.settings.verbose:
+            logging.info("Created the data loader for X\n")
+
+
+        Y_data = src.datasets.CelebA_Features_Kernel(
+                        cfg.data.dataset_y,
+                        "../data/{}/{}".format(
+                                            dataset,
+                                            cfg.data.features),
+                        var=cfg.data.kernel_variance)
     if dataset == "celeba":
         X_data = src.datasets.CelebA_Features(
                         cfg.data.dataset_x,
