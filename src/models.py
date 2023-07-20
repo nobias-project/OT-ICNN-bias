@@ -2,6 +2,9 @@ from torch import nn
 
 class AE(nn.Module):
     def __init__(self, nc, ngf, ndf, latent_variable_size):
+        """
+        Enocder-Decoder network.
+        """
         super(AE, self).__init__()
 
         self.nc = nc

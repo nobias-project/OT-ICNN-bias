@@ -183,6 +183,9 @@ def get_iccns(num_layers=2,
               input_dim=512,
               num_neuron=512,
               activation="leaky_relu"):
+    """
+    This function returns a pair of ICCN with given hyper-parameters.
+    """
     if num_layers == 2:
 
         if full_quadratic:
@@ -277,6 +280,10 @@ def get_optimizers(f,
                    beta1_adam=0.5,
                    beta2_adam=0.99,
                    alpha_rmsprop=0.99):
+    """
+    This function returns a pair of optimizer object for the neural networks
+    f and g.
+    """
 
     if optimizer == 'SGD':
 

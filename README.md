@@ -48,12 +48,12 @@ data
 4. Extract features from CelebA's images by running:
 ```console
 cd scripts
-python ./Feature_extraction.py
+python ./feature_extraction.py
 ```
 
 Note that we use [Hydra](https://hydra.cc/docs/intro/) configuration manager, you can override some of the configurations by running:
 ```console
-python ./Feature_extraction.py features="resnet50"
+python ./feature_extraction.py features="resnet50"
 ```
 
 5. Select suitable splits of CelebA data by running:
