@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import random
 from src.optimal_transport_modules.icnn_modules import *
 
 from src.utils import get_iccns

@@ -7,16 +7,12 @@ import random
 import logging
 import torch.utils.data
 
-import src.datasets
-import src.optimal_transport_modules
-
 from matplotlib import pyplot as plt
 from scipy.stats import truncnorm
 
 from src.optimal_transport_modules.icnn_modules import *
-from src.utils import set_random_seeds, setup_logging
-from src.utils import ResultsLog, get_iccns, get_optimizers
-# matplotlib.use('tkagg')
+from src.utils import set_random_seeds
+from src.utils import get_iccns, get_optimizers
 
 # dataset class
 

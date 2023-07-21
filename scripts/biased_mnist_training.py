@@ -14,8 +14,8 @@ from matplotlib import pyplot as plt
 from scipy.stats import truncnorm
 
 from src.optimal_transport_modules.icnn_modules import *
-from src.utils import set_random_seeds, setup_logging
-from src.utils import ResultsLog, get_iccns, get_optimizers
+from src.utils import set_random_seeds
+from src.utils import get_iccns, get_optimizers
 
 
 # useful functions

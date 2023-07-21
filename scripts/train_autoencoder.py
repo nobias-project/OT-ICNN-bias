@@ -7,7 +7,7 @@ import torchvision.datasets as dset
 import torch
 from torch.autograd import Variable
 import torchvision
-from torchvision import datasets, transforms
+from torchvision import transforms
 from torch.utils.data import DataLoader
 from datetime import datetime
 
@@ -190,8 +190,3 @@ for epoch in range(20):
     train(epoch)
     test(epoch)
 
-'''model.load_state_dict(torch.load('../imgs/autoencoder_19.pth'))
-#print(full_data[1][0].shape)
-for i in range(len(full_data)):
-    embedding=model.encode(full_data[i][0].reshape(1,3,128,128))
-    torch.save(embedding,'../imgs/encoder_extraction/{}.pt'.format(str(i+1).zfill(6)))'''
