@@ -2,7 +2,6 @@ import hydra
 from omegaconf import DictConfig
 
 import os
-import shutil
 import torch
 import torch.nn as nn
 import pandas as pd

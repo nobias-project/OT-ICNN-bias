@@ -1,22 +1,13 @@
 import os
-import torch
 import torch.optim as optim
 import random
 import logging.config
 import shutil
-import numpy as np
 import pandas as pd
 from bokeh.io import output_file, save, show
 from bokeh.plotting import figure
 from bokeh.layouts import column
 from src.optimal_transport_modules.icnn_modules import *
-
-# from bokeh.charts import Line, defaults
-#
-# defaults.width = 800
-# defaults.height = 400
-# defaults.tools = 'pan,box_zoom,wheel_zoom,box_select,hover,resize,reset,save'
-
 
 def setup_logging(log_file='log.txt'):
     """Setup logging configuration
