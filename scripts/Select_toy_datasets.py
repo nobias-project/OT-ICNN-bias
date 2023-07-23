@@ -10,12 +10,6 @@ random.seed(seed)
 
 size = 5000
 
-blobs, y_blobs = sklearn.datasets.make_blobs(n_samples=size, centers = [[0,0],[ 4,4]], cluster_std=1.)
-np.save("../data/toy/blobs.npy", np.c_[blobs, y_blobs])
-
-moons, y_moons = sklearn.datasets.make_moons(n_samples=size)
-np.save("../data/toy/moons.npy", np.c_[moons, y_moons])
-
 circles, y_circles = sklearn.datasets.make_circles(n_samples=size)
 circles *= 10
 np.save("../data/toy/circles.npy", np.c_[circles, y_circles])

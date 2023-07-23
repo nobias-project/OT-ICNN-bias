@@ -25,7 +25,7 @@ def main():
         cuda = not cfg.settings.no_cuda and torch.cuda.is_available()
 
         # data
-        if args.experiment != 3:
+        if args.experiment != "toy":
             X_data, Y_data = load_data(cfg)
 
             # load dataframe
@@ -97,9 +97,9 @@ if __name__ == "__main__":
                         help='dataset used in the experiment')
 
     parser.add_argument('--experiment',
-                        type=int,
-                        default=1,
-                        help='No of the experiment')
+                        type= str,
+                        default="celeba",
+                        help='name of the experiment in ["toy", "celeba"]')
 
     parser.add_argument('--epoch',
                         type=int,

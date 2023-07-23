@@ -49,7 +49,7 @@ def truncated_normal(size, threshold=1):
     values = truncnorm.rvs(-threshold, threshold, size=size)
     return values
 
-@hydra.main(version_base=None, config_path="config", config_name="experiment3_train_config")
+@hydra.main(version_base=None, config_path="config", config_name="toy_data_train_config")
 def main(cfg: DictConfig):
 
     cuda = not cfg.settings.no_cuda and torch.cuda.is_available()

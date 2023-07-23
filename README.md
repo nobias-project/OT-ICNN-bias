@@ -64,39 +64,55 @@ Note that we use [Hydra](https://hydra.cc/docs/intro/) configuration manager, yo
 ```console
 python ./feature_extraction.py features="resnet50"
 ```
+Check the configurations at ```../scripts/config/feature_extraction_config.yaml```
 
 ## Run the Experiments
 ### Baseline comparison
-6. Create toy datasets for this experiments by running:
+6. Create two toy datasets (a pair of concentric circles and a pair of concentric circle plus a Gaussian) for this experiments by running:
 ```console
 python ./Select_toy_datasets.py
 ```
 
-7. Train the networks to compute the quadratic Wasserstein distance.
+7. Train the networks to compute the quadratic Wasserstein distance. 
 ```console
-python ./Toy_datasets_training.py
+python ./Toy_datasets_training.py dataset="../data/toy/circles.npy"
 ```
+and 
+
+```console
+python ./Toy_datasets_training.py dataset="../data/toy/circles_plus.npy"
+```
+
+To change other configurations check ```../scripts/config/toy_data_train_config.yaml``` 
 
 8. Run the notebook ```../notebook/Evaluation_Toy_Data.ipynb```
 
 ### Wasserstein distance for bias detection
 #### CelebA
+
 9. Select suitable splits of CelebA data by running:
 ```console
 python ./Select_data_celebA.py
 ```
 
-10. Train the networks to compute the quadratic Wasserstein distance.
+10. Train the networks to compute the quadratic Wasserstein distance for the attribute Wearing_Necktie with 30% of bias wrt the uniform sample.
 ```console
-python ./celeba_training.py
+python ./celeba_training.py   dataset_x="../data/celeba/experiment1_Male_Wearing_Necktie_30.csv"
+  dataset_y="../data/celeba/experiment1_uniform_sample.csv"
 ```
+The experiments where carried out for four different attributes (Wearing_Necktie, Wearing_Hat, Eyeglasses. and Smiling) and 4 different bias level (10%, 30%, 60%, 90%).
+
+Check the other congigurations at ```../scripts/config/celeba_train_config.yaml```
+
 11. Evaluate through 
 ```console
-python ./experiment_eval_celeba.py
+python ./experiment_eval_celeba.py --config="YYYY-MM-DD/HH-MM-SS" --epoch=25
 ```
+YYYY-MM-DD/HH-MM-SS is the time stamp of the training as saved by Hydra.
+
 12. Run ```../notebook/Compute_Wasserstein.ipynb```
-biased MNIST
-#### CelebA
+
+#### Biased MNIST
 
 13. Train the networks to compute the quadratic Wasserstein distance.
 ```console
@@ -105,7 +121,7 @@ python ./biased_mnist_training.py
 
 14. Evaluate through 
 ```console
-python ./experiment_eval_biased_mnist.py
+python ./experiment_eval_biased_mnist.py --config="YYYY-MM-DD/HH-MM-SS" --epoch=25
 ```
 
 15. Run ```../notebook/Compute_Wasserstein.ipynb```
@@ -116,16 +132,32 @@ python ./experiment_eval_biased_mnist.py
 ```console
 python ./dimensionality_reduction_CelebA_splits.py --method="PCA" --dimension="3"
 ```
-You can  override the configurations to use other methods or dimensions.
+You can  override the configurations to use other methods or dimensions. We experimented with PCA, TSNE, Isomap, and SpectralEmbedding. We reduce the space to 3, 50 and 150 dimensions (Note that for t-SNE we reduced only to 3 dimension because higher dimensions were too computational intensive).  
 
 17. Train using
-18. Evaluate
+
+```console
+python ./celeba_training.py   dataset_x="../data/celeba/experiment1_Male_Wearing_Necktie_30.csv"
+  dataset_y="../data/celeba/experiment1_uniform_sample.csv" features = Wearing_Hat_reduced_10_PCA3
+```
+
+18. Evaluate as previous experiments and by running the notebook ```./notebooks/Evaluaton_Experiment_Dimensionality_Reduction.ipynb```. 
 
 ### Case Study
-19.  Select Data
-20. reduce
-21. train 
-22. evaluate
+19.  Select data via
+```console
+python ./Select_data_case_study.py
+```
+
+20. Reduce dimension using
+```console
+python ./dimensionality_reduction_case_study.py
+```
+21. Train via 
+```console
+python ./celeba_training.py dataset_x = "../data/celeba/celeba_female.csv" dataset_y="../data/celeba/celeba_male.csv" features = "resnet18_reduced_PCA_3"
+```
+22. Evaluate as previous experiment and by running the notebook ```../notebooks/Evaluation_Case_Study.ipynb```
 
 
 ## Acknowledgments
